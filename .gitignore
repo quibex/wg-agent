@@ -9,10 +9,6 @@ certs/
 *.crt
 *.csr
 
-# Go
-*.mod
-*.sum
-
 # IDE
 .vscode/
 .idea/
