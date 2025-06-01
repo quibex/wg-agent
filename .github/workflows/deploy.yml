@@ -1,12 +1,11 @@
 name: Build and Deploy wg-agent
 
-# Триггер: при пуше в ветку main (или master)
 on:
   push:
     branches:
       - main
-  paths_ignore:
-    - 'scripts/health_checker.sh'
+    paths-ignore:
+      - 'scripts/health_checker.sh'
 
 jobs:
   build-and-push:
@@ -14,19 +13,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1) Получаем код репозитория
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2) Логинимся в Docker Hub
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # 3) Собираем Docker-образ и пушим в Docker Hub
-      #    Пример: тег myapp:${{ github.sha }} и myapp:latest
       - name: Build and push Docker image
         uses: docker/build-push-action@v4
         with:
@@ -42,20 +37,19 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1) Добавляем приватный ключ в ssh-agent
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
       - name: Set up SSH key
         uses: webfactory/ssh-agent@v0.8.1
         with:
           ssh-private-key: ${{ secrets.SSH_DEPLOY_KEY }}
 
-      # 2) Переменные для SSH (чтобы не ругалось на known_hosts)
       - name: Add server to known_hosts
         run: |
           mkdir -p ~/.ssh
           ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
-        # SSH_HOST заносится как Secret (пример: 203.0.113.10)
 
-      # 3) Генерируем сертификаты если они не существуют
       - name: Generate server certificate from CA
         env:
           CA_CERT_PEM: ${{ secrets.CA_CERT_PEM }}
@@ -68,24 +62,16 @@ jobs:
             rm /tmp/make-server-cert.sh
           EOF
 
-      # 4) SSH + Docker pull + docker-compose или docker run
-      - name: SSH and deploy container
+      - name: Deploy container
         env:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           TG_TOKEN: ${{ secrets.TG_TOKEN }}
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
         run: |
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << EOF
-            # Здесь заходим на сервер и выполняем команды:
             cd /opt/wg-agent || exit 1
-
-            # Можно остановить старый контейнер (если есть)
             docker rm -f wg-agent-container || true
-
-            # Забираем свежий образ из Docker Hub
             docker pull $DOCKERHUB_USERNAME/wg-agent:latest
-
-            # Запускаем новый контейнер (перемапить порты, окружение и т.д.)
             docker run -d \
               --name wg-agent-container \
               --restart unless-stopped \
@@ -98,7 +84,6 @@ jobs:
               -e WG_AGENT_HTTP_ADDR=\$WG_AGENT_HTTP_ADDR \
               -e WG_AGENT_RATE_LIMIT=\$WG_AGENT_RATE_LIMIT \
               $DOCKERHUB_USERNAME/wg-agent:latest
-
             echo "export TG_TOKEN=$TG_TOKEN" >> /etc/environment
             echo "export TG_CHAT_ID=$TG_CHAT_ID" >> /etc/environment
           EOF
@@ -130,7 +115,6 @@ jobs:
           scp scripts/health_checker.sh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/opt/wg-agent/
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << EOF
             chmod +x /opt/wg-agent/health_checker.sh
-            
             crontab -l | grep -v health_checker || true > temp_cron
             echo "*/5 * * * * . /etc/environment; /opt/wg-agent/health_checker.sh" >> temp_cron
             crontab temp_cron
