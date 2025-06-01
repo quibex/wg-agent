@@ -39,25 +39,25 @@ func New(cfg *config.Config, log *slog.Logger, wgClient wireguard.Client) *Serve
 
 // Start запускает сервер
 func (s *Server) Start() error {
-	s.logger.Info("Запуск wg-agent", "addr", s.config.Addr)
+	s.logger.Info("Starting wg-agent", "addr", s.config.Addr)
 
-	s.logger.Info("Запуск HTTP сервера", "addr", s.config.HTTPAddr)
+	s.logger.Info("Starting HTTP server", "addr", s.config.HTTPAddr)
 
 	go func() {
 		if err := s.httpServer.Start(); err != nil && err != http.ErrServerClosed {
-			s.logger.Error("Ошибка HTTP сервера", "error", err)
+			s.logger.Error("HTTP server error", "error", err)
 		}
 	}()
 
 	// Настройка TLS
 	tlsConfig, err := s.setupTLS()
 	if err != nil {
-		return fmt.Errorf("ошибка настройки TLS: %w", err)
+		return fmt.Errorf("TLS setup failed: %w", err)
 	}
 
 	listener, err := net.Listen("tcp", s.config.Addr)
 	if err != nil {
-		return fmt.Errorf("ошибка создания listener: %w", err)
+		return fmt.Errorf("failed to create listener: %w", err)
 	}
 
 	// Создание gRPC сервера с TLS и rate-limit interceptor
@@ -70,7 +70,7 @@ func (s *Server) Start() error {
 	// Регистрация сервиса
 	proto.RegisterWireGuardAgentServer(grpcServer, newAgentService(s.logger, s.wgClient, s.config.Interface))
 
-	s.logger.Info("gRPC сервер запущен", "addr", s.config.Addr)
+	s.logger.Info("gRPC server started", "addr", s.config.Addr)
 
 	return grpcServer.Serve(listener)
 }
@@ -80,18 +80,18 @@ func (s *Server) setupTLS() (*tls.Config, error) {
 	// Загрузка серверного сертификата
 	cert, err := tls.LoadX509KeyPair(s.config.TLSCert, s.config.TLSKey)
 	if err != nil {
-		return nil, fmt.Errorf("ошибка загрузки серверного сертификата: %w", err)
+		return nil, fmt.Errorf("failed to load server certificate: %w", err)
 	}
 
 	// Загрузка CA для проверки клиентских сертификатов
 	caCert, err := os.ReadFile(s.config.CABundle)
 	if err != nil {
-		return nil, fmt.Errorf("ошибка чтения CA bundle: %w", err)
+		return nil, fmt.Errorf("failed to read CA bundle: %w", err)
 	}
 
 	caCertPool := x509.NewCertPool()
 	if !caCertPool.AppendCertsFromPEM(caCert) {
-		return nil, fmt.Errorf("ошибка добавления CA сертификата")
+		return nil, fmt.Errorf("failed to add CA certificate")
 	}
 
 	return &tls.Config{
@@ -104,11 +104,11 @@ func (s *Server) setupTLS() (*tls.Config, error) {
 
 // Stop останавливает сервер
 func (s *Server) Stop() error {
-	s.logger.Info("Остановка сервера")
+	s.logger.Info("Stopping server")
 
 	if s.httpServer != nil {
 		if err := s.httpServer.Stop(); err != nil {
-			s.logger.Error("Ошибка остановки HTTP сервера", "error", err)
+			s.logger.Error("HTTP server stop error", "error", err)
 		}
 	}
 
