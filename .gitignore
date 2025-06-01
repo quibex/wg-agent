@@ -1,0 +1,30 @@
+# Binaries
+bin/
+wg-agent
+
+# Certificates - НИКОГДА не коммитим приватные ключи!
+certs/
+*.pem
+*.key
+*.crt
+*.csr
+
+# Go
+*.mod
+*.sum
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Test coverage
+*.out 

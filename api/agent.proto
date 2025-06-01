@@ -1,0 +1,36 @@
+syntax = "proto3";
+package wgagent;
+
+import "google/protobuf/empty.proto";
+
+option go_package = "github.com/our-org/wg-project/api/proto";
+
+service WireGuardAgent {
+  rpc AddPeer(AddPeerRequest) returns (AddPeerResponse);
+  rpc RemovePeer(RemovePeerRequest) returns (google.protobuf.Empty);
+  rpc ListPeers(ListPeersRequest) returns (ListPeersResponse);  // debug/help
+}
+
+message AddPeerRequest {
+  string interface   = 1;  // "wg0"
+  string public_key  = 2;
+  string allowed_ip  = 3;  // "10.8.0.10/32"
+  int32  keepalive_s = 4;  // 25
+}
+
+message AddPeerResponse { 
+  int32 listen_port = 1; 
+}
+
+message RemovePeerRequest { 
+  string interface = 1; 
+  string public_key = 2; 
+}
+
+message ListPeersRequest { 
+  string interface = 1; 
+}
+
+message ListPeersResponse { 
+  repeated string public_keys = 1; 
+} 
