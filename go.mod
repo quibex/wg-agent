@@ -1,6 +1,6 @@
 module github.com/our-org/wg-project
 
-go 1.24
+go 1.22
 
 require (
 	golang.org/x/time v0.5.0

@@ -56,9 +56,11 @@ jobs:
           CA_KEY_PEM: ${{ secrets.CA_KEY_PEM }}
         run: |
           scp scripts/make-server-cert.sh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/tmp/
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << EOF
             chmod +x /tmp/make-server-cert.sh
-            CA_CERT_PEM="$CA_CERT_PEM" CA_KEY_PEM="$CA_KEY_PEM" /tmp/make-server-cert.sh
+            export CA_CERT_PEM="$CA_CERT_PEM"
+            export CA_KEY_PEM="$CA_KEY_PEM"
+            /tmp/make-server-cert.sh
             rm -f /tmp/make-server-cert.sh
           EOF
 
@@ -68,7 +70,7 @@ jobs:
           TG_TOKEN: ${{ secrets.TG_TOKEN }}
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
         run: |
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << EOF
             sudo mkdir -p /opt/wg-agent
             cd /opt/wg-agent
             docker rm -f wg-agent-container || true
