@@ -66,6 +66,7 @@ func (a *agentService) AddPeer(ctx context.Context, req *proto.AddPeerRequest) (
 	device, err := a.wgClient.Device(iface)
 	if err != nil {
 		a.log.Error("failed to get device after add", "error", err)
+		return nil, err
 	}
 
 	return &proto.AddPeerResponse{ListenPort: int32(device.ListenPort)}, nil
