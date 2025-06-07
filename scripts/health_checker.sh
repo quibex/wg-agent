@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Health checker for wg-agent service
+# Sends notifications to your personal Telegram account if service is down
+# Required environment variables: TG_TOKEN, TG_CHAT_ID
+
 SERVICE_NAME="wg-agent"
 HEALTH_URL="http://localhost:8080/health"
 

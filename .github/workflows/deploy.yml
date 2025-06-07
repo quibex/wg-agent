@@ -86,6 +86,7 @@ jobs:
               -e WG_AGENT_ADDR=0.0.0.0:7443 \
               -e WG_AGENT_HTTP_ADDR=0.0.0.0:8080 \
               -e WG_AGENT_RATE_LIMIT=10 \
+              -e WG_AGENT_TLS_PRIVATE=/etc/wg-agent/key.pem \
               $DOCKERHUB_USERNAME/wg-agent:latest
             sudo sh -c "echo 'export TG_TOKEN=$TG_TOKEN' >> /etc/environment"
             sudo sh -c "echo 'export TG_CHAT_ID=$TG_CHAT_ID' >> /etc/environment"

@@ -25,13 +25,14 @@ COPY --from=builder /app/wg-agent .
 
 RUN mkdir -p /etc/wg-agent
 
-ENV WG_AGENT_INTERFACE=wg0
-ENV WG_AGENT_TLS_CERT=/etc/wg-agent/cert.pem
-ENV WG_AGENT_TLS_KEY=/etc/wg-agent/key.pem
-ENV WG_AGENT_CA_BUNDLE=/etc/wg-agent/ca.pem
-ENV WG_AGENT_ADDR=0.0.0.0:7443
-ENV WG_AGENT_HTTP_ADDR=0.0.0.0:8080
-ENV WG_AGENT_RATE_LIMIT=10
+# Application configuration
+ENV WG_AGENT_INTERFACE=wg0 \
+    WG_AGENT_TLS_CERT=/etc/wg-agent/cert.pem \
+    WG_AGENT_TLS_PRIVATE=/etc/wg-agent/key.pem \
+    WG_AGENT_CA_BUNDLE=/etc/wg-agent/ca.pem \
+    WG_AGENT_ADDR=0.0.0.0:7443 \
+    WG_AGENT_HTTP_ADDR=0.0.0.0:8080 \
+    WG_AGENT_RATE_LIMIT=10
 
 EXPOSE 7443 8080
 

@@ -28,7 +28,7 @@ func Load() *Config {
 	return &Config{
 		Interface: getEnv("WG_AGENT_INTERFACE", "wg0"),
 		TLSCert:   getEnv("WG_AGENT_TLS_CERT", "/etc/wg-agent/cert.pem"),
-		TLSKey:    getEnv("WG_AGENT_TLS_KEY", "/etc/wg-agent/key.pem"),
+		TLSKey:    getEnv("WG_AGENT_TLS_PRIVATE", "/etc/wg-agent/key.pem"),
 		CABundle:  getEnv("WG_AGENT_CA_BUNDLE", "/etc/wg-agent/ca.pem"),
 		Addr:      getEnv("WG_AGENT_ADDR", "0.0.0.0:7443"),
 		HTTPAddr:  getEnv("WG_AGENT_HTTP_ADDR", "0.0.0.0:8080"),

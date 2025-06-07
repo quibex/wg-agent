@@ -1,0 +1,52 @@
+name: Deploy Health Checker Script
+
+on:
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Reason for manual deployment'
+        required: false
+        default: 'Manual deployment'
+
+jobs:
+  deploy-health-checker:
+    name: Deploy Health Checker Script
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up SSH key
+        uses: webfactory/ssh-agent@v0.9.1
+        with:
+          ssh-private-key: ${{ secrets.SSH_DEPLOY_KEY }}
+
+      - name: Add server to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy health checker script
+        run: |
+          echo "Deploying health checker script: ${{ inputs.reason }}"
+          scp scripts/health_checker.sh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/opt/wg-agent/
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+            chmod +x /opt/wg-agent/health_checker.sh
+            # Remove old cron job
+            crontab -l 2>/dev/null | grep -v health_checker > temp_cron || true
+            # Add new cron job
+            echo "*/5 * * * * . /etc/environment; /opt/wg-agent/health_checker.sh" >> temp_cron
+            crontab temp_cron
+            rm -f temp_cron
+            echo "Health checker script deployed and cron job updated"
+          EOF
+
+      - name: Verify deployment
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+            echo "Checking deployed script:"
+            ls -la /opt/wg-agent/health_checker.sh
+            echo "Current cron jobs:"
+            crontab -l | grep health_checker || echo "No health checker cron job found"
+          EOF 
