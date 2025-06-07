@@ -9,7 +9,32 @@ HEALTH_URL="http://localhost:8080/health"
 OK_MESSAGE_ID_FILE="/tmp/wg-agent-ok-message-id"
 FAIL_MESSAGE_ID_FILE="/tmp/wg-agent-fail-message-id"
 FAIL_START_TIME_FILE="/tmp/wg-agent-fail-start-time"
+LOCK_FILE="/tmp/wg-agent-health-check.lock"
 HOSTNAME=$(hostname)
+
+# Cleanup function
+cleanup() {
+    rm -f "$LOCK_FILE"
+    exit $1
+}
+
+# Set trap to cleanup on exit
+trap 'cleanup $?' EXIT INT TERM
+
+# Check if another instance is running
+if [ -f "$LOCK_FILE" ]; then
+    # Check if the process is actually running
+    if kill -0 "$(cat "$LOCK_FILE")" 2>/dev/null; then
+        # Another instance is running, exit silently
+        exit 0
+    else
+        # Stale lock file, remove it
+        rm -f "$LOCK_FILE"
+    fi
+fi
+
+# Create lock file with current PID
+echo $$ > "$LOCK_FILE"
 
 send_message() {
     local message="$1"

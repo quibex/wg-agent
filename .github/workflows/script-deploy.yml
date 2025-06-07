@@ -53,13 +53,13 @@ jobs:
             # Remove old cron job
             crontab -l 2>/dev/null | grep -v health_checker > temp_cron || true
             
-            # Add new cron job (every 5 minutes)
-            echo "*/5 * * * * . /etc/environment; /opt/wg-agent/health_checker.sh" >> temp_cron
+            # Add new cron job (every minute with lock protection)
+            echo "* * * * * . /etc/environment; /opt/wg-agent/health_checker.sh" >> temp_cron
             crontab temp_cron
             rm -f temp_cron
             
             echo "✅ Health checker script deployed successfully!"
-            echo "📅 Cron job set to run every 5 minutes"
+            echo "📅 Cron job set to run every minute (with lock protection)"
           EOF
 
       - name: Verify deployment
