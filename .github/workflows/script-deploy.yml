@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - 'scripts/health_checker.sh'
+      - '.github/workflows/script-deploy.yml'
       
   workflow_dispatch:
     inputs:
@@ -64,10 +65,10 @@ jobs:
       - name: Verify deployment
         run: |
           echo "🔍 Verifying deployment..."
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
-            echo "📄 Script file:"
-            ls -la /opt/wg-agent/health_checker.sh
-            echo ""
-            echo "📅 Active cron jobs:"
-            crontab -l | grep health_checker || echo "❌ No health checker cron job found"
-          EOF 
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "
+            echo '📄 Script file:' && 
+            ls -la /opt/wg-agent/health_checker.sh && 
+            echo '' && 
+            echo '📅 Active cron jobs:' && 
+            (crontab -l | grep health_checker || echo '❌ No health checker cron job found')
+          "

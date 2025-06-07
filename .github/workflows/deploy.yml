@@ -6,6 +6,7 @@ on:
       - main
     paths-ignore:
       - 'scripts/health_checker.sh'
+      - '.github/workflows/script-deploy.yml'
   
   workflow_dispatch:
     inputs:
