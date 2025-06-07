@@ -1,8 +1,7 @@
 # Binaries
 bin/
-wg-agent
 
-# Certificates - НИКОГДА не коммитим приватные ключи!
+# Certificates 
 certs/
 *.pem
 *.key
