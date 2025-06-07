@@ -6,12 +6,14 @@
 
 SERVICE_NAME="wg-agent"
 HEALTH_URL="http://localhost:8080/health"
-MESSAGE_ID_FILE="/tmp/wg-agent-message-id"
-CURRENT_TIME=$(date '+%Y-%m-%d %H:%M:%S')
+OK_MESSAGE_ID_FILE="/tmp/wg-agent-ok-message-id"
+FAIL_MESSAGE_ID_FILE="/tmp/wg-agent-fail-message-id"
+FAIL_START_TIME_FILE="/tmp/wg-agent-fail-start-time"
 HOSTNAME=$(hostname)
 
 send_message() {
     local message="$1"
+    local save_to_file="$2"
     if [ -n "$TG_TOKEN" ] && [ -n "$TG_CHAT_ID" ]; then
         response=$(curl -s -X POST "https://api.telegram.org/bot$TG_TOKEN/sendMessage" \
                         -d "chat_id=$TG_CHAT_ID" \
@@ -20,8 +22,8 @@ send_message() {
         
         # Extract message_id from response and save it
         message_id=$(echo "$response" | grep -o '"message_id":[0-9]*' | cut -d':' -f2)
-        if [ -n "$message_id" ]; then
-            echo "$message_id" > "$MESSAGE_ID_FILE"
+        if [ -n "$message_id" ] && [ -n "$save_to_file" ]; then
+            echo "$message_id" > "$save_to_file"
         fi
     fi
 }
@@ -34,47 +36,139 @@ edit_message() {
              -d "chat_id=$TG_CHAT_ID" \
              -d "message_id=$message_id" \
              -d "text=$message" \
-             -d "parse_mode=HTML" > /dev/null
+             -d "parse_mode=HTML" > /dev/null 2>&1
+        return $?
+    fi
+    return 1
+}
+
+# Calculate downtime duration
+calculate_duration() {
+    local start_time="$1"
+    local current_time="$2"
+    local duration=$((current_time - start_time))
+    
+    if [ $duration -lt 60 ]; then
+        echo "${duration} сек"
+    elif [ $duration -lt 3600 ]; then
+        echo "$((duration / 60)) мин $((duration % 60)) сек"
+    else
+        echo "$((duration / 3600)) ч $((duration % 3600 / 60)) мин"
     fi
 }
 
-# Check service health
-if curl -s -f "$HEALTH_URL" > /dev/null; then
-    # Service is OK
-    OK_MESSAGE="✅ <b>$SERVICE_NAME</b> работает нормально
+# Main health check function
+check_health() {
+    curl -s -f "$HEALTH_URL" > /dev/null
+    return $?
+}
+
+# Handle OK status
+handle_ok_status() {
+    local current_time=$(date '+%Y-%m-%d %H:%M:%S')
+    local was_failing=false
+    
+    # Check if we're recovering from failure
+    if [ -f "$FAIL_START_TIME_FILE" ]; then
+        was_failing=true
+        local fail_start=$(cat "$FAIL_START_TIME_FILE")
+        local current_timestamp=$(date +%s)
+        local downtime=$(calculate_duration "$fail_start" "$current_timestamp")
+        
+        # Send recovery message
+        local recovery_message="🎉 <b>$SERVICE_NAME ВОССТАНОВЛЕН!</b>
 
 🖥 Сервер: <code>$HOSTNAME</code>
-🕒 Обновлено: <code>$CURRENT_TIME</code>
+🕒 Восстановлен: <code>$current_time</code>
+⏱ Время простоя: <code>$downtime</code>
+📊 Статус: <b>OK</b>"
+        
+        send_message "$recovery_message" "$OK_MESSAGE_ID_FILE"
+        
+        # Clean up failure files
+        rm -f "$FAIL_START_TIME_FILE" "$FAIL_MESSAGE_ID_FILE"
+        
+        exit 0
+    fi
+    
+    # Normal OK status - update existing message
+    local ok_message="✅ <b>$SERVICE_NAME</b> работает нормально
+
+🖥 Сервер: <code>$HOSTNAME</code>
+🕒 Обновлено: <code>$current_time</code>
 📊 Статус: <b>OK</b>"
 
-    # Try to edit existing message, or send new one if no message_id
-    if [ -f "$MESSAGE_ID_FILE" ]; then
-        message_id=$(cat "$MESSAGE_ID_FILE")
-        edit_message "$OK_MESSAGE" "$message_id"
-        
-        # If edit failed (message too old or deleted), send new message
-        if [ $? -ne 0 ]; then
-            send_message "$OK_MESSAGE"
+    if [ -f "$OK_MESSAGE_ID_FILE" ]; then
+        local message_id=$(cat "$OK_MESSAGE_ID_FILE")
+        if ! edit_message "$ok_message" "$message_id"; then
+            # Edit failed, send new message
+            send_message "$ok_message" "$OK_MESSAGE_ID_FILE"
         fi
     else
-        # No previous message, send new one
-        send_message "$OK_MESSAGE"
+        # No previous OK message, send new one
+        send_message "$ok_message" "$OK_MESSAGE_ID_FILE"
     fi
     
     exit 0
-else
-    # Service is DOWN - always send new message
-    ERROR_MESSAGE="🚨 <b>$SERVICE_NAME НЕДОСТУПЕН!</b>
+}
+
+# Handle FAIL status with monitoring loop
+handle_fail_status() {
+    local current_timestamp=$(date +%s)
+    local current_time=$(date '+%Y-%m-%d %H:%M:%S')
+    
+    # If this is the first failure, record start time and send initial message
+    if [ ! -f "$FAIL_START_TIME_FILE" ]; then
+        echo "$current_timestamp" > "$FAIL_START_TIME_FILE"
+        
+        local initial_fail_message="🚨 <b>$SERVICE_NAME НЕДОСТУПЕН!</b>
 
 🖥 Сервер: <code>$HOSTNAME</code>
-🕒 Время ошибки: <code>$CURRENT_TIME</code>
+🕒 Время ошибки: <code>$current_time</code>
 ❌ Статус: <b>FAILED</b>
 🔗 URL: <code>$HEALTH_URL</code>"
 
-    send_message "$ERROR_MESSAGE"
+        send_message "$initial_fail_message" "$FAIL_MESSAGE_ID_FILE"
+        
+        # Remove OK message ID since service is down
+        rm -f "$OK_MESSAGE_ID_FILE"
+    fi
     
-    # Remove message_id file so next OK will be a new message
-    rm -f "$MESSAGE_ID_FILE"
+    # Enter monitoring loop - check every 10 seconds until recovery
+    local fail_start=$(cat "$FAIL_START_TIME_FILE")
     
-    exit 1
+    while true; do
+        sleep 10
+        
+        # Check if service recovered
+        if check_health; then
+            handle_ok_status
+            exit 0
+        fi
+        
+        # Update failure message with current duration
+        current_timestamp=$(date +%s)
+        current_time=$(date '+%Y-%m-%d %H:%M:%S')
+        local downtime=$(calculate_duration "$fail_start" "$current_timestamp")
+        
+        local updated_fail_message="🚨 <b>$SERVICE_NAME НЕДОСТУПЕН!</b>
+
+🖥 Сервер: <code>$HOSTNAME</code>
+🕒 Время ошибки: <code>$(date -d @$fail_start '+%Y-%m-%d %H:%M:%S')</code>
+⏱ Простой: <code>$downtime</code>
+🔄 Последняя проверка: <code>$current_time</code>
+❌ Статус: <b>FAILED</b>"
+
+        if [ -f "$FAIL_MESSAGE_ID_FILE" ]; then
+            local message_id=$(cat "$FAIL_MESSAGE_ID_FILE")
+            edit_message "$updated_fail_message" "$message_id"
+        fi
+    done
+}
+
+# Main logic
+if check_health; then
+    handle_ok_status
+else
+    handle_fail_status
 fi
