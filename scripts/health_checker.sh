@@ -10,7 +10,6 @@ MESSAGE_ID_FILE="/tmp/wg-agent-message-id"
 CURRENT_TIME=$(date '+%Y-%m-%d %H:%M:%S')
 HOSTNAME=$(hostname)
 
-# Function to send new message
 send_message() {
     local message="$1"
     if [ -n "$TG_TOKEN" ] && [ -n "$TG_CHAT_ID" ]; then
@@ -27,7 +26,6 @@ send_message() {
     fi
 }
 
-# Function to edit existing message
 edit_message() {
     local message="$1"
     local message_id="$2"
