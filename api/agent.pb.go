@@ -28,6 +28,7 @@ type AddPeerRequest struct {
 	PublicKey     string                 `protobuf:"bytes,2,opt,name=public_key,json=publicKey,proto3" json:"public_key,omitempty"`
 	AllowedIp     string                 `protobuf:"bytes,3,opt,name=allowed_ip,json=allowedIp,proto3" json:"allowed_ip,omitempty"`     // "10.8.0.10/32"
 	KeepaliveS    int32                  `protobuf:"varint,4,opt,name=keepalive_s,json=keepaliveS,proto3" json:"keepalive_s,omitempty"` // 25
+	PeerId        string                 `protobuf:"bytes,5,opt,name=peer_id,json=peerId,proto3" json:"peer_id,omitempty"`              // уникальный идентификатор пира для lime-bot
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -90,9 +91,18 @@ func (x *AddPeerRequest) GetKeepaliveS() int32 {
 	return 0
 }
 
+func (x *AddPeerRequest) GetPeerId() string {
+	if x != nil {
+		return x.PeerId
+	}
+	return ""
+}
+
 type AddPeerResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ListenPort    int32                  `protobuf:"varint,1,opt,name=listen_port,json=listenPort,proto3" json:"listen_port,omitempty"`
+	Config        string                 `protobuf:"bytes,2,opt,name=config,proto3" json:"config,omitempty"`               // полная конфигурация клиента
+	QrCode        string                 `protobuf:"bytes,3,opt,name=qr_code,json=qrCode,proto3" json:"qr_code,omitempty"` // QR код в base64
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -132,6 +142,20 @@ func (x *AddPeerResponse) GetListenPort() int32 {
 		return x.ListenPort
 	}
 	return 0
+}
+
+func (x *AddPeerResponse) GetConfig() string {
+	if x != nil {
+		return x.Config
+	}
+	return ""
+}
+
+func (x *AddPeerResponse) GetQrCode() string {
+	if x != nil {
+		return x.QrCode
+	}
+	return ""
 }
 
 type RemovePeerRequest struct {
@@ -186,6 +210,254 @@ func (x *RemovePeerRequest) GetPublicKey() string {
 	return ""
 }
 
+type DisablePeerRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Interface     string                 `protobuf:"bytes,1,opt,name=interface,proto3" json:"interface,omitempty"`
+	PublicKey     string                 `protobuf:"bytes,2,opt,name=public_key,json=publicKey,proto3" json:"public_key,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DisablePeerRequest) Reset() {
+	*x = DisablePeerRequest{}
+	mi := &file_api_agent_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DisablePeerRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DisablePeerRequest) ProtoMessage() {}
+
+func (x *DisablePeerRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_agent_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DisablePeerRequest.ProtoReflect.Descriptor instead.
+func (*DisablePeerRequest) Descriptor() ([]byte, []int) {
+	return file_api_agent_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *DisablePeerRequest) GetInterface() string {
+	if x != nil {
+		return x.Interface
+	}
+	return ""
+}
+
+func (x *DisablePeerRequest) GetPublicKey() string {
+	if x != nil {
+		return x.PublicKey
+	}
+	return ""
+}
+
+type EnablePeerRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Interface     string                 `protobuf:"bytes,1,opt,name=interface,proto3" json:"interface,omitempty"`
+	PublicKey     string                 `protobuf:"bytes,2,opt,name=public_key,json=publicKey,proto3" json:"public_key,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *EnablePeerRequest) Reset() {
+	*x = EnablePeerRequest{}
+	mi := &file_api_agent_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EnablePeerRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EnablePeerRequest) ProtoMessage() {}
+
+func (x *EnablePeerRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_agent_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EnablePeerRequest.ProtoReflect.Descriptor instead.
+func (*EnablePeerRequest) Descriptor() ([]byte, []int) {
+	return file_api_agent_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *EnablePeerRequest) GetInterface() string {
+	if x != nil {
+		return x.Interface
+	}
+	return ""
+}
+
+func (x *EnablePeerRequest) GetPublicKey() string {
+	if x != nil {
+		return x.PublicKey
+	}
+	return ""
+}
+
+type GetPeerInfoRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Interface     string                 `protobuf:"bytes,1,opt,name=interface,proto3" json:"interface,omitempty"`
+	PublicKey     string                 `protobuf:"bytes,2,opt,name=public_key,json=publicKey,proto3" json:"public_key,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetPeerInfoRequest) Reset() {
+	*x = GetPeerInfoRequest{}
+	mi := &file_api_agent_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetPeerInfoRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetPeerInfoRequest) ProtoMessage() {}
+
+func (x *GetPeerInfoRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_agent_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetPeerInfoRequest.ProtoReflect.Descriptor instead.
+func (*GetPeerInfoRequest) Descriptor() ([]byte, []int) {
+	return file_api_agent_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *GetPeerInfoRequest) GetInterface() string {
+	if x != nil {
+		return x.Interface
+	}
+	return ""
+}
+
+func (x *GetPeerInfoRequest) GetPublicKey() string {
+	if x != nil {
+		return x.PublicKey
+	}
+	return ""
+}
+
+type GetPeerInfoResponse struct {
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	PublicKey         string                 `protobuf:"bytes,1,opt,name=public_key,json=publicKey,proto3" json:"public_key,omitempty"`
+	AllowedIp         string                 `protobuf:"bytes,2,opt,name=allowed_ip,json=allowedIp,proto3" json:"allowed_ip,omitempty"`
+	LastHandshakeUnix int64                  `protobuf:"varint,3,opt,name=last_handshake_unix,json=lastHandshakeUnix,proto3" json:"last_handshake_unix,omitempty"`
+	RxBytes           int64                  `protobuf:"varint,4,opt,name=rx_bytes,json=rxBytes,proto3" json:"rx_bytes,omitempty"`
+	TxBytes           int64                  `protobuf:"varint,5,opt,name=tx_bytes,json=txBytes,proto3" json:"tx_bytes,omitempty"`
+	Enabled           bool                   `protobuf:"varint,6,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	PeerId            string                 `protobuf:"bytes,7,opt,name=peer_id,json=peerId,proto3" json:"peer_id,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *GetPeerInfoResponse) Reset() {
+	*x = GetPeerInfoResponse{}
+	mi := &file_api_agent_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetPeerInfoResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetPeerInfoResponse) ProtoMessage() {}
+
+func (x *GetPeerInfoResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_api_agent_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetPeerInfoResponse.ProtoReflect.Descriptor instead.
+func (*GetPeerInfoResponse) Descriptor() ([]byte, []int) {
+	return file_api_agent_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *GetPeerInfoResponse) GetPublicKey() string {
+	if x != nil {
+		return x.PublicKey
+	}
+	return ""
+}
+
+func (x *GetPeerInfoResponse) GetAllowedIp() string {
+	if x != nil {
+		return x.AllowedIp
+	}
+	return ""
+}
+
+func (x *GetPeerInfoResponse) GetLastHandshakeUnix() int64 {
+	if x != nil {
+		return x.LastHandshakeUnix
+	}
+	return 0
+}
+
+func (x *GetPeerInfoResponse) GetRxBytes() int64 {
+	if x != nil {
+		return x.RxBytes
+	}
+	return 0
+}
+
+func (x *GetPeerInfoResponse) GetTxBytes() int64 {
+	if x != nil {
+		return x.TxBytes
+	}
+	return 0
+}
+
+func (x *GetPeerInfoResponse) GetEnabled() bool {
+	if x != nil {
+		return x.Enabled
+	}
+	return false
+}
+
+func (x *GetPeerInfoResponse) GetPeerId() string {
+	if x != nil {
+		return x.PeerId
+	}
+	return ""
+}
+
 type ListPeersRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Interface     string                 `protobuf:"bytes,1,opt,name=interface,proto3" json:"interface,omitempty"`
@@ -195,7 +467,7 @@ type ListPeersRequest struct {
 
 func (x *ListPeersRequest) Reset() {
 	*x = ListPeersRequest{}
-	mi := &file_api_agent_proto_msgTypes[3]
+	mi := &file_api_agent_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -207,7 +479,7 @@ func (x *ListPeersRequest) String() string {
 func (*ListPeersRequest) ProtoMessage() {}
 
 func (x *ListPeersRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_agent_proto_msgTypes[3]
+	mi := &file_api_agent_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -220,7 +492,7 @@ func (x *ListPeersRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListPeersRequest.ProtoReflect.Descriptor instead.
 func (*ListPeersRequest) Descriptor() ([]byte, []int) {
-	return file_api_agent_proto_rawDescGZIP(), []int{3}
+	return file_api_agent_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *ListPeersRequest) GetInterface() string {
@@ -232,14 +504,14 @@ func (x *ListPeersRequest) GetInterface() string {
 
 type ListPeersResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	PublicKeys    []string               `protobuf:"bytes,1,rep,name=public_keys,json=publicKeys,proto3" json:"public_keys,omitempty"`
+	Peers         []*PeerInfo            `protobuf:"bytes,1,rep,name=peers,proto3" json:"peers,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListPeersResponse) Reset() {
 	*x = ListPeersResponse{}
-	mi := &file_api_agent_proto_msgTypes[4]
+	mi := &file_api_agent_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -251,7 +523,7 @@ func (x *ListPeersResponse) String() string {
 func (*ListPeersResponse) ProtoMessage() {}
 
 func (x *ListPeersResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_agent_proto_msgTypes[4]
+	mi := &file_api_agent_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -264,21 +536,233 @@ func (x *ListPeersResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListPeersResponse.ProtoReflect.Descriptor instead.
 func (*ListPeersResponse) Descriptor() ([]byte, []int) {
-	return file_api_agent_proto_rawDescGZIP(), []int{4}
+	return file_api_agent_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *ListPeersResponse) GetPublicKeys() []string {
+func (x *ListPeersResponse) GetPeers() []*PeerInfo {
 	if x != nil {
-		return x.PublicKeys
+		return x.Peers
 	}
 	return nil
+}
+
+type PeerInfo struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PublicKey     string                 `protobuf:"bytes,1,opt,name=public_key,json=publicKey,proto3" json:"public_key,omitempty"`
+	AllowedIp     string                 `protobuf:"bytes,2,opt,name=allowed_ip,json=allowedIp,proto3" json:"allowed_ip,omitempty"`
+	Enabled       bool                   `protobuf:"varint,3,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	PeerId        string                 `protobuf:"bytes,4,opt,name=peer_id,json=peerId,proto3" json:"peer_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PeerInfo) Reset() {
+	*x = PeerInfo{}
+	mi := &file_api_agent_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PeerInfo) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PeerInfo) ProtoMessage() {}
+
+func (x *PeerInfo) ProtoReflect() protoreflect.Message {
+	mi := &file_api_agent_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PeerInfo.ProtoReflect.Descriptor instead.
+func (*PeerInfo) Descriptor() ([]byte, []int) {
+	return file_api_agent_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *PeerInfo) GetPublicKey() string {
+	if x != nil {
+		return x.PublicKey
+	}
+	return ""
+}
+
+func (x *PeerInfo) GetAllowedIp() string {
+	if x != nil {
+		return x.AllowedIp
+	}
+	return ""
+}
+
+func (x *PeerInfo) GetEnabled() bool {
+	if x != nil {
+		return x.Enabled
+	}
+	return false
+}
+
+func (x *PeerInfo) GetPeerId() string {
+	if x != nil {
+		return x.PeerId
+	}
+	return ""
+}
+
+type GeneratePeerConfigRequest struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	Interface      string                 `protobuf:"bytes,1,opt,name=interface,proto3" json:"interface,omitempty"`
+	ServerEndpoint string                 `protobuf:"bytes,2,opt,name=server_endpoint,json=serverEndpoint,proto3" json:"server_endpoint,omitempty"` // "vpn.example.com:51820"
+	DnsServers     string                 `protobuf:"bytes,3,opt,name=dns_servers,json=dnsServers,proto3" json:"dns_servers,omitempty"`             // "1.1.1.1, 1.0.0.1"
+	AllowedIps     string                 `protobuf:"bytes,4,opt,name=allowed_ips,json=allowedIps,proto3" json:"allowed_ips,omitempty"`             // "0.0.0.0/0" для полного туннеля
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *GeneratePeerConfigRequest) Reset() {
+	*x = GeneratePeerConfigRequest{}
+	mi := &file_api_agent_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GeneratePeerConfigRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GeneratePeerConfigRequest) ProtoMessage() {}
+
+func (x *GeneratePeerConfigRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_agent_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GeneratePeerConfigRequest.ProtoReflect.Descriptor instead.
+func (*GeneratePeerConfigRequest) Descriptor() ([]byte, []int) {
+	return file_api_agent_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *GeneratePeerConfigRequest) GetInterface() string {
+	if x != nil {
+		return x.Interface
+	}
+	return ""
+}
+
+func (x *GeneratePeerConfigRequest) GetServerEndpoint() string {
+	if x != nil {
+		return x.ServerEndpoint
+	}
+	return ""
+}
+
+func (x *GeneratePeerConfigRequest) GetDnsServers() string {
+	if x != nil {
+		return x.DnsServers
+	}
+	return ""
+}
+
+func (x *GeneratePeerConfigRequest) GetAllowedIps() string {
+	if x != nil {
+		return x.AllowedIps
+	}
+	return ""
+}
+
+type GeneratePeerConfigResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PrivateKey    string                 `protobuf:"bytes,1,opt,name=private_key,json=privateKey,proto3" json:"private_key,omitempty"`
+	PublicKey     string                 `protobuf:"bytes,2,opt,name=public_key,json=publicKey,proto3" json:"public_key,omitempty"`
+	Config        string                 `protobuf:"bytes,3,opt,name=config,proto3" json:"config,omitempty"`                        // конфигурация для клиента
+	QrCode        string                 `protobuf:"bytes,4,opt,name=qr_code,json=qrCode,proto3" json:"qr_code,omitempty"`          // QR код в base64
+	AllowedIp     string                 `protobuf:"bytes,5,opt,name=allowed_ip,json=allowedIp,proto3" json:"allowed_ip,omitempty"` // выделенный IP адрес
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GeneratePeerConfigResponse) Reset() {
+	*x = GeneratePeerConfigResponse{}
+	mi := &file_api_agent_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GeneratePeerConfigResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GeneratePeerConfigResponse) ProtoMessage() {}
+
+func (x *GeneratePeerConfigResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_api_agent_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GeneratePeerConfigResponse.ProtoReflect.Descriptor instead.
+func (*GeneratePeerConfigResponse) Descriptor() ([]byte, []int) {
+	return file_api_agent_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *GeneratePeerConfigResponse) GetPrivateKey() string {
+	if x != nil {
+		return x.PrivateKey
+	}
+	return ""
+}
+
+func (x *GeneratePeerConfigResponse) GetPublicKey() string {
+	if x != nil {
+		return x.PublicKey
+	}
+	return ""
+}
+
+func (x *GeneratePeerConfigResponse) GetConfig() string {
+	if x != nil {
+		return x.Config
+	}
+	return ""
+}
+
+func (x *GeneratePeerConfigResponse) GetQrCode() string {
+	if x != nil {
+		return x.QrCode
+	}
+	return ""
+}
+
+func (x *GeneratePeerConfigResponse) GetAllowedIp() string {
+	if x != nil {
+		return x.AllowedIp
+	}
+	return ""
 }
 
 var File_api_agent_proto protoreflect.FileDescriptor
 
 const file_api_agent_proto_rawDesc = "" +
 	"\n" +
-	"\x0fapi/agent.proto\x12\awgagent\x1a\x1bgoogle/protobuf/empty.proto\"\x8d\x01\n" +
+	"\x0fapi/agent.proto\x12\awgagent\x1a\x1bgoogle/protobuf/empty.proto\"\xa6\x01\n" +
 	"\x0eAddPeerRequest\x12\x1c\n" +
 	"\tinterface\x18\x01 \x01(\tR\tinterface\x12\x1d\n" +
 	"\n" +
@@ -286,24 +770,76 @@ const file_api_agent_proto_rawDesc = "" +
 	"\n" +
 	"allowed_ip\x18\x03 \x01(\tR\tallowedIp\x12\x1f\n" +
 	"\vkeepalive_s\x18\x04 \x01(\x05R\n" +
-	"keepaliveS\"2\n" +
+	"keepaliveS\x12\x17\n" +
+	"\apeer_id\x18\x05 \x01(\tR\x06peerId\"c\n" +
 	"\x0fAddPeerResponse\x12\x1f\n" +
 	"\vlisten_port\x18\x01 \x01(\x05R\n" +
-	"listenPort\"P\n" +
+	"listenPort\x12\x16\n" +
+	"\x06config\x18\x02 \x01(\tR\x06config\x12\x17\n" +
+	"\aqr_code\x18\x03 \x01(\tR\x06qrCode\"P\n" +
 	"\x11RemovePeerRequest\x12\x1c\n" +
 	"\tinterface\x18\x01 \x01(\tR\tinterface\x12\x1d\n" +
 	"\n" +
-	"public_key\x18\x02 \x01(\tR\tpublicKey\"0\n" +
+	"public_key\x18\x02 \x01(\tR\tpublicKey\"Q\n" +
+	"\x12DisablePeerRequest\x12\x1c\n" +
+	"\tinterface\x18\x01 \x01(\tR\tinterface\x12\x1d\n" +
+	"\n" +
+	"public_key\x18\x02 \x01(\tR\tpublicKey\"P\n" +
+	"\x11EnablePeerRequest\x12\x1c\n" +
+	"\tinterface\x18\x01 \x01(\tR\tinterface\x12\x1d\n" +
+	"\n" +
+	"public_key\x18\x02 \x01(\tR\tpublicKey\"Q\n" +
+	"\x12GetPeerInfoRequest\x12\x1c\n" +
+	"\tinterface\x18\x01 \x01(\tR\tinterface\x12\x1d\n" +
+	"\n" +
+	"public_key\x18\x02 \x01(\tR\tpublicKey\"\xec\x01\n" +
+	"\x13GetPeerInfoResponse\x12\x1d\n" +
+	"\n" +
+	"public_key\x18\x01 \x01(\tR\tpublicKey\x12\x1d\n" +
+	"\n" +
+	"allowed_ip\x18\x02 \x01(\tR\tallowedIp\x12.\n" +
+	"\x13last_handshake_unix\x18\x03 \x01(\x03R\x11lastHandshakeUnix\x12\x19\n" +
+	"\brx_bytes\x18\x04 \x01(\x03R\arxBytes\x12\x19\n" +
+	"\btx_bytes\x18\x05 \x01(\x03R\atxBytes\x12\x18\n" +
+	"\aenabled\x18\x06 \x01(\bR\aenabled\x12\x17\n" +
+	"\apeer_id\x18\a \x01(\tR\x06peerId\"0\n" +
 	"\x10ListPeersRequest\x12\x1c\n" +
-	"\tinterface\x18\x01 \x01(\tR\tinterface\"4\n" +
-	"\x11ListPeersResponse\x12\x1f\n" +
-	"\vpublic_keys\x18\x01 \x03(\tR\n" +
-	"publicKeys2\xd4\x01\n" +
+	"\tinterface\x18\x01 \x01(\tR\tinterface\"<\n" +
+	"\x11ListPeersResponse\x12'\n" +
+	"\x05peers\x18\x01 \x03(\v2\x11.wgagent.PeerInfoR\x05peers\"{\n" +
+	"\bPeerInfo\x12\x1d\n" +
+	"\n" +
+	"public_key\x18\x01 \x01(\tR\tpublicKey\x12\x1d\n" +
+	"\n" +
+	"allowed_ip\x18\x02 \x01(\tR\tallowedIp\x12\x18\n" +
+	"\aenabled\x18\x03 \x01(\bR\aenabled\x12\x17\n" +
+	"\apeer_id\x18\x04 \x01(\tR\x06peerId\"\xa4\x01\n" +
+	"\x19GeneratePeerConfigRequest\x12\x1c\n" +
+	"\tinterface\x18\x01 \x01(\tR\tinterface\x12'\n" +
+	"\x0fserver_endpoint\x18\x02 \x01(\tR\x0eserverEndpoint\x12\x1f\n" +
+	"\vdns_servers\x18\x03 \x01(\tR\n" +
+	"dnsServers\x12\x1f\n" +
+	"\vallowed_ips\x18\x04 \x01(\tR\n" +
+	"allowedIps\"\xac\x01\n" +
+	"\x1aGeneratePeerConfigResponse\x12\x1f\n" +
+	"\vprivate_key\x18\x01 \x01(\tR\n" +
+	"privateKey\x12\x1d\n" +
+	"\n" +
+	"public_key\x18\x02 \x01(\tR\tpublicKey\x12\x16\n" +
+	"\x06config\x18\x03 \x01(\tR\x06config\x12\x17\n" +
+	"\aqr_code\x18\x04 \x01(\tR\x06qrCode\x12\x1d\n" +
+	"\n" +
+	"allowed_ip\x18\x05 \x01(\tR\tallowedIp2\x83\x04\n" +
 	"\x0eWireGuardAgent\x12<\n" +
 	"\aAddPeer\x12\x17.wgagent.AddPeerRequest\x1a\x18.wgagent.AddPeerResponse\x12@\n" +
 	"\n" +
 	"RemovePeer\x12\x1a.wgagent.RemovePeerRequest\x1a\x16.google.protobuf.Empty\x12B\n" +
-	"\tListPeers\x12\x19.wgagent.ListPeersRequest\x1a\x1a.wgagent.ListPeersResponseB)Z'github.com/our-org/wg-project/api/protob\x06proto3"
+	"\vDisablePeer\x12\x1b.wgagent.DisablePeerRequest\x1a\x16.google.protobuf.Empty\x12@\n" +
+	"\n" +
+	"EnablePeer\x12\x1a.wgagent.EnablePeerRequest\x1a\x16.google.protobuf.Empty\x12H\n" +
+	"\vGetPeerInfo\x12\x1b.wgagent.GetPeerInfoRequest\x1a\x1c.wgagent.GetPeerInfoResponse\x12B\n" +
+	"\tListPeers\x12\x19.wgagent.ListPeersRequest\x1a\x1a.wgagent.ListPeersResponse\x12]\n" +
+	"\x12GeneratePeerConfig\x12\".wgagent.GeneratePeerConfigRequest\x1a#.wgagent.GeneratePeerConfigResponseB)Z'github.com/our-org/wg-project/api/protob\x06proto3"
 
 var (
 	file_api_agent_proto_rawDescOnce sync.Once
@@ -317,27 +853,43 @@ func file_api_agent_proto_rawDescGZIP() []byte {
 	return file_api_agent_proto_rawDescData
 }
 
-var file_api_agent_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_api_agent_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_api_agent_proto_goTypes = []any{
-	(*AddPeerRequest)(nil),    // 0: wgagent.AddPeerRequest
-	(*AddPeerResponse)(nil),   // 1: wgagent.AddPeerResponse
-	(*RemovePeerRequest)(nil), // 2: wgagent.RemovePeerRequest
-	(*ListPeersRequest)(nil),  // 3: wgagent.ListPeersRequest
-	(*ListPeersResponse)(nil), // 4: wgagent.ListPeersResponse
-	(*emptypb.Empty)(nil),     // 5: google.protobuf.Empty
+	(*AddPeerRequest)(nil),             // 0: wgagent.AddPeerRequest
+	(*AddPeerResponse)(nil),            // 1: wgagent.AddPeerResponse
+	(*RemovePeerRequest)(nil),          // 2: wgagent.RemovePeerRequest
+	(*DisablePeerRequest)(nil),         // 3: wgagent.DisablePeerRequest
+	(*EnablePeerRequest)(nil),          // 4: wgagent.EnablePeerRequest
+	(*GetPeerInfoRequest)(nil),         // 5: wgagent.GetPeerInfoRequest
+	(*GetPeerInfoResponse)(nil),        // 6: wgagent.GetPeerInfoResponse
+	(*ListPeersRequest)(nil),           // 7: wgagent.ListPeersRequest
+	(*ListPeersResponse)(nil),          // 8: wgagent.ListPeersResponse
+	(*PeerInfo)(nil),                   // 9: wgagent.PeerInfo
+	(*GeneratePeerConfigRequest)(nil),  // 10: wgagent.GeneratePeerConfigRequest
+	(*GeneratePeerConfigResponse)(nil), // 11: wgagent.GeneratePeerConfigResponse
+	(*emptypb.Empty)(nil),              // 12: google.protobuf.Empty
 }
 var file_api_agent_proto_depIdxs = []int32{
-	0, // 0: wgagent.WireGuardAgent.AddPeer:input_type -> wgagent.AddPeerRequest
-	2, // 1: wgagent.WireGuardAgent.RemovePeer:input_type -> wgagent.RemovePeerRequest
-	3, // 2: wgagent.WireGuardAgent.ListPeers:input_type -> wgagent.ListPeersRequest
-	1, // 3: wgagent.WireGuardAgent.AddPeer:output_type -> wgagent.AddPeerResponse
-	5, // 4: wgagent.WireGuardAgent.RemovePeer:output_type -> google.protobuf.Empty
-	4, // 5: wgagent.WireGuardAgent.ListPeers:output_type -> wgagent.ListPeersResponse
-	3, // [3:6] is the sub-list for method output_type
-	0, // [0:3] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	9,  // 0: wgagent.ListPeersResponse.peers:type_name -> wgagent.PeerInfo
+	0,  // 1: wgagent.WireGuardAgent.AddPeer:input_type -> wgagent.AddPeerRequest
+	2,  // 2: wgagent.WireGuardAgent.RemovePeer:input_type -> wgagent.RemovePeerRequest
+	3,  // 3: wgagent.WireGuardAgent.DisablePeer:input_type -> wgagent.DisablePeerRequest
+	4,  // 4: wgagent.WireGuardAgent.EnablePeer:input_type -> wgagent.EnablePeerRequest
+	5,  // 5: wgagent.WireGuardAgent.GetPeerInfo:input_type -> wgagent.GetPeerInfoRequest
+	7,  // 6: wgagent.WireGuardAgent.ListPeers:input_type -> wgagent.ListPeersRequest
+	10, // 7: wgagent.WireGuardAgent.GeneratePeerConfig:input_type -> wgagent.GeneratePeerConfigRequest
+	1,  // 8: wgagent.WireGuardAgent.AddPeer:output_type -> wgagent.AddPeerResponse
+	12, // 9: wgagent.WireGuardAgent.RemovePeer:output_type -> google.protobuf.Empty
+	12, // 10: wgagent.WireGuardAgent.DisablePeer:output_type -> google.protobuf.Empty
+	12, // 11: wgagent.WireGuardAgent.EnablePeer:output_type -> google.protobuf.Empty
+	6,  // 12: wgagent.WireGuardAgent.GetPeerInfo:output_type -> wgagent.GetPeerInfoResponse
+	8,  // 13: wgagent.WireGuardAgent.ListPeers:output_type -> wgagent.ListPeersResponse
+	11, // 14: wgagent.WireGuardAgent.GeneratePeerConfig:output_type -> wgagent.GeneratePeerConfigResponse
+	8,  // [8:15] is the sub-list for method output_type
+	1,  // [1:8] is the sub-list for method input_type
+	1,  // [1:1] is the sub-list for extension type_name
+	1,  // [1:1] is the sub-list for extension extendee
+	0,  // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_api_agent_proto_init() }
@@ -351,7 +903,7 @@ func file_api_agent_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_agent_proto_rawDesc), len(file_api_agent_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   5,
+			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

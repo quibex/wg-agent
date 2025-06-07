@@ -20,18 +20,29 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	WireGuardAgent_AddPeer_FullMethodName    = "/wgagent.WireGuardAgent/AddPeer"
-	WireGuardAgent_RemovePeer_FullMethodName = "/wgagent.WireGuardAgent/RemovePeer"
-	WireGuardAgent_ListPeers_FullMethodName  = "/wgagent.WireGuardAgent/ListPeers"
+	WireGuardAgent_AddPeer_FullMethodName            = "/wgagent.WireGuardAgent/AddPeer"
+	WireGuardAgent_RemovePeer_FullMethodName         = "/wgagent.WireGuardAgent/RemovePeer"
+	WireGuardAgent_DisablePeer_FullMethodName        = "/wgagent.WireGuardAgent/DisablePeer"
+	WireGuardAgent_EnablePeer_FullMethodName         = "/wgagent.WireGuardAgent/EnablePeer"
+	WireGuardAgent_GetPeerInfo_FullMethodName        = "/wgagent.WireGuardAgent/GetPeerInfo"
+	WireGuardAgent_ListPeers_FullMethodName          = "/wgagent.WireGuardAgent/ListPeers"
+	WireGuardAgent_GeneratePeerConfig_FullMethodName = "/wgagent.WireGuardAgent/GeneratePeerConfig"
 )
 
 // WireGuardAgentClient is the client API for WireGuardAgent service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type WireGuardAgentClient interface {
+	// Основные операции с пирами
 	AddPeer(ctx context.Context, in *AddPeerRequest, opts ...grpc.CallOption) (*AddPeerResponse, error)
 	RemovePeer(ctx context.Context, in *RemovePeerRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	DisablePeer(ctx context.Context, in *DisablePeerRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	EnablePeer(ctx context.Context, in *EnablePeerRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// Информация и статистика
+	GetPeerInfo(ctx context.Context, in *GetPeerInfoRequest, opts ...grpc.CallOption) (*GetPeerInfoResponse, error)
 	ListPeers(ctx context.Context, in *ListPeersRequest, opts ...grpc.CallOption) (*ListPeersResponse, error)
+	// Генерация конфигураций
+	GeneratePeerConfig(ctx context.Context, in *GeneratePeerConfigRequest, opts ...grpc.CallOption) (*GeneratePeerConfigResponse, error)
 }
 
 type wireGuardAgentClient struct {
@@ -62,6 +73,36 @@ func (c *wireGuardAgentClient) RemovePeer(ctx context.Context, in *RemovePeerReq
 	return out, nil
 }
 
+func (c *wireGuardAgentClient) DisablePeer(ctx context.Context, in *DisablePeerRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, WireGuardAgent_DisablePeer_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *wireGuardAgentClient) EnablePeer(ctx context.Context, in *EnablePeerRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, WireGuardAgent_EnablePeer_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *wireGuardAgentClient) GetPeerInfo(ctx context.Context, in *GetPeerInfoRequest, opts ...grpc.CallOption) (*GetPeerInfoResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetPeerInfoResponse)
+	err := c.cc.Invoke(ctx, WireGuardAgent_GetPeerInfo_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *wireGuardAgentClient) ListPeers(ctx context.Context, in *ListPeersRequest, opts ...grpc.CallOption) (*ListPeersResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListPeersResponse)
@@ -72,13 +113,30 @@ func (c *wireGuardAgentClient) ListPeers(ctx context.Context, in *ListPeersReque
 	return out, nil
 }
 
+func (c *wireGuardAgentClient) GeneratePeerConfig(ctx context.Context, in *GeneratePeerConfigRequest, opts ...grpc.CallOption) (*GeneratePeerConfigResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GeneratePeerConfigResponse)
+	err := c.cc.Invoke(ctx, WireGuardAgent_GeneratePeerConfig_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // WireGuardAgentServer is the server API for WireGuardAgent service.
 // All implementations must embed UnimplementedWireGuardAgentServer
 // for forward compatibility.
 type WireGuardAgentServer interface {
+	// Основные операции с пирами
 	AddPeer(context.Context, *AddPeerRequest) (*AddPeerResponse, error)
 	RemovePeer(context.Context, *RemovePeerRequest) (*emptypb.Empty, error)
+	DisablePeer(context.Context, *DisablePeerRequest) (*emptypb.Empty, error)
+	EnablePeer(context.Context, *EnablePeerRequest) (*emptypb.Empty, error)
+	// Информация и статистика
+	GetPeerInfo(context.Context, *GetPeerInfoRequest) (*GetPeerInfoResponse, error)
 	ListPeers(context.Context, *ListPeersRequest) (*ListPeersResponse, error)
+	// Генерация конфигураций
+	GeneratePeerConfig(context.Context, *GeneratePeerConfigRequest) (*GeneratePeerConfigResponse, error)
 	mustEmbedUnimplementedWireGuardAgentServer()
 }
 
@@ -95,8 +153,20 @@ func (UnimplementedWireGuardAgentServer) AddPeer(context.Context, *AddPeerReques
 func (UnimplementedWireGuardAgentServer) RemovePeer(context.Context, *RemovePeerRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RemovePeer not implemented")
 }
+func (UnimplementedWireGuardAgentServer) DisablePeer(context.Context, *DisablePeerRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DisablePeer not implemented")
+}
+func (UnimplementedWireGuardAgentServer) EnablePeer(context.Context, *EnablePeerRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method EnablePeer not implemented")
+}
+func (UnimplementedWireGuardAgentServer) GetPeerInfo(context.Context, *GetPeerInfoRequest) (*GetPeerInfoResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetPeerInfo not implemented")
+}
 func (UnimplementedWireGuardAgentServer) ListPeers(context.Context, *ListPeersRequest) (*ListPeersResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListPeers not implemented")
+}
+func (UnimplementedWireGuardAgentServer) GeneratePeerConfig(context.Context, *GeneratePeerConfigRequest) (*GeneratePeerConfigResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GeneratePeerConfig not implemented")
 }
 func (UnimplementedWireGuardAgentServer) mustEmbedUnimplementedWireGuardAgentServer() {}
 func (UnimplementedWireGuardAgentServer) testEmbeddedByValue()                        {}
@@ -155,6 +225,60 @@ func _WireGuardAgent_RemovePeer_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _WireGuardAgent_DisablePeer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DisablePeerRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WireGuardAgentServer).DisablePeer(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WireGuardAgent_DisablePeer_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WireGuardAgentServer).DisablePeer(ctx, req.(*DisablePeerRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WireGuardAgent_EnablePeer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EnablePeerRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WireGuardAgentServer).EnablePeer(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WireGuardAgent_EnablePeer_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WireGuardAgentServer).EnablePeer(ctx, req.(*EnablePeerRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WireGuardAgent_GetPeerInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetPeerInfoRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WireGuardAgentServer).GetPeerInfo(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WireGuardAgent_GetPeerInfo_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WireGuardAgentServer).GetPeerInfo(ctx, req.(*GetPeerInfoRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _WireGuardAgent_ListPeers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListPeersRequest)
 	if err := dec(in); err != nil {
@@ -169,6 +293,24 @@ func _WireGuardAgent_ListPeers_Handler(srv interface{}, ctx context.Context, dec
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(WireGuardAgentServer).ListPeers(ctx, req.(*ListPeersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WireGuardAgent_GeneratePeerConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GeneratePeerConfigRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WireGuardAgentServer).GeneratePeerConfig(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WireGuardAgent_GeneratePeerConfig_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WireGuardAgentServer).GeneratePeerConfig(ctx, req.(*GeneratePeerConfigRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -189,8 +331,24 @@ var WireGuardAgent_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _WireGuardAgent_RemovePeer_Handler,
 		},
 		{
+			MethodName: "DisablePeer",
+			Handler:    _WireGuardAgent_DisablePeer_Handler,
+		},
+		{
+			MethodName: "EnablePeer",
+			Handler:    _WireGuardAgent_EnablePeer_Handler,
+		},
+		{
+			MethodName: "GetPeerInfo",
+			Handler:    _WireGuardAgent_GetPeerInfo_Handler,
+		},
+		{
 			MethodName: "ListPeers",
 			Handler:    _WireGuardAgent_ListPeers_Handler,
+		},
+		{
+			MethodName: "GeneratePeerConfig",
+			Handler:    _WireGuardAgent_GeneratePeerConfig_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

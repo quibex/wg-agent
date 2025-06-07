@@ -6,9 +6,18 @@ import "google/protobuf/empty.proto";
 option go_package = "github.com/our-org/wg-project/api/proto";
 
 service WireGuardAgent {
+  // Основные операции с пирами
   rpc AddPeer(AddPeerRequest) returns (AddPeerResponse);
   rpc RemovePeer(RemovePeerRequest) returns (google.protobuf.Empty);
-  rpc ListPeers(ListPeersRequest) returns (ListPeersResponse);  // debug/help
+  rpc DisablePeer(DisablePeerRequest) returns (google.protobuf.Empty);
+  rpc EnablePeer(EnablePeerRequest) returns (google.protobuf.Empty);
+  
+  // Информация и статистика
+  rpc GetPeerInfo(GetPeerInfoRequest) returns (GetPeerInfoResponse);
+  rpc ListPeers(ListPeersRequest) returns (ListPeersResponse);
+  
+  // Генерация конфигураций
+  rpc GeneratePeerConfig(GeneratePeerConfigRequest) returns (GeneratePeerConfigResponse);
 }
 
 message AddPeerRequest {
@@ -16,10 +25,13 @@ message AddPeerRequest {
   string public_key  = 2;
   string allowed_ip  = 3;  // "10.8.0.10/32"
   int32  keepalive_s = 4;  // 25
+  string peer_id     = 5;  // уникальный идентификатор пира для lime-bot
 }
 
 message AddPeerResponse { 
-  int32 listen_port = 1; 
+  int32 listen_port = 1;
+  string config     = 2;  // полная конфигурация клиента
+  string qr_code    = 3;  // QR код в base64
 }
 
 message RemovePeerRequest { 
@@ -27,10 +39,57 @@ message RemovePeerRequest {
   string public_key = 2; 
 }
 
+message DisablePeerRequest {
+  string interface = 1;
+  string public_key = 2;
+}
+
+message EnablePeerRequest {
+  string interface = 1;
+  string public_key = 2;
+}
+
+message GetPeerInfoRequest {
+  string interface = 1;
+  string public_key = 2;
+}
+
+message GetPeerInfoResponse {
+  string public_key = 1;
+  string allowed_ip = 2;
+  int64 last_handshake_unix = 3;
+  int64 rx_bytes = 4;
+  int64 tx_bytes = 5;
+  bool enabled = 6;
+  string peer_id = 7;
+}
+
 message ListPeersRequest { 
   string interface = 1; 
 }
 
 message ListPeersResponse { 
-  repeated string public_keys = 1; 
+  repeated PeerInfo peers = 1; 
+}
+
+message PeerInfo {
+  string public_key = 1;
+  string allowed_ip = 2;
+  bool enabled = 3;
+  string peer_id = 4;
+}
+
+message GeneratePeerConfigRequest {
+  string interface = 1;
+  string server_endpoint = 2;  // "vpn.example.com:51820"
+  string dns_servers = 3;      // "1.1.1.1, 1.0.0.1"
+  string allowed_ips = 4;      // "0.0.0.0/0" для полного туннеля
+}
+
+message GeneratePeerConfigResponse {
+  string private_key = 1;
+  string public_key = 2;
+  string config = 3;      // конфигурация для клиента
+  string qr_code = 4;     // QR код в base64
+  string allowed_ip = 5;  // выделенный IP адрес
 } 

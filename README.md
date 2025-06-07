@@ -55,9 +55,24 @@ Environment variables:
 
 ### gRPC Methods
 
-- `AddPeer(publicKey, allowedIP, keepalive)` - Add WireGuard peer
-- `RemovePeer(publicKey)` - Remove WireGuard peer  
-- `ListPeers()` - List all peer public keys
+#### Peer Management
+
+- `AddPeer(interface, publicKey, allowedIP, keepalive, peerID)` - Add WireGuard peer and get configuration
+  - Returns: server port, client configuration, QR code
+- `RemovePeer(interface, publicKey)` - Remove WireGuard peer completely
+- `DisablePeer(interface, publicKey)` - Temporarily disable peer (block traffic)
+- `EnablePeer(interface, publicKey)` - Enable previously disabled peer
+
+#### Monitoring & Information
+
+- `GetPeerInfo(interface, publicKey)` - Get detailed peer information
+  - Returns: public key, IP, last handshake, RX/TX traffic, status, peer ID
+- `ListPeers(interface)` - List all peers with basic information
+
+#### Configuration Generation
+
+- `GeneratePeerConfig(interface, serverEndpoint, dnsServers, allowedIPs)` - Generate new key pair and configuration
+  - Returns: private/public keys, configuration, QR code, allocated IP
 
 ### Health Check
 
