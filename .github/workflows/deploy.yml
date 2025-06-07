@@ -9,24 +9,16 @@ on:
   
   workflow_dispatch:
     inputs:
-      deploy_type:
-        description: 'What to deploy'
-        required: true
-        default: 'full'
-        type: choice
-        options:
-          - full
-          - script-only
       reason:
         description: 'Reason for manual deployment'
         required: false
-        default: 'Manual deployment'
+        default: 'Manual full deployment'
 
 jobs:
   build-and-push:
     name: Build Docker Image and Push to Docker Hub
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.deploy_type == 'full')
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
 
     steps:
       - name: Checkout repository
@@ -51,7 +43,7 @@ jobs:
     name: Deploy to Production Server
     needs: build-and-push
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.deploy_type == 'full')
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
 
     steps:
       - name: Checkout repository
@@ -109,38 +101,4 @@ jobs:
             sudo sh -c "echo 'export TG_CHAT_ID=$TG_CHAT_ID' >> /etc/environment"
           EOF
 
-  update-health-checker:
-    name: Update Health Checker Script
-    runs-on: ubuntu-latest
-    if: |
-      contains(github.event.commits[0].modified, 'scripts/health_checker.sh') || 
-      (github.event_name == 'workflow_dispatch' && inputs.deploy_type == 'script-only')
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up SSH key
-        uses: webfactory/ssh-agent@v0.9.1
-        with:
-          ssh-private-key: ${{ secrets.SSH_DEPLOY_KEY }}
-
-      - name: Add server to known_hosts
-        run: |
-          mkdir -p ~/.ssh
-          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
-
-      - name: Deploy health checker script
-        run: |
-          echo "Deploying health checker script..."
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "Manual deployment reason: ${{ inputs.reason }}"
-          fi
-          scp scripts/health_checker.sh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/opt/wg-agent/
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
-            chmod +x /opt/wg-agent/health_checker.sh
-            crontab -l 2>/dev/null | grep -v health_checker > temp_cron || true
-            echo "*/5 * * * * . /etc/environment; /opt/wg-agent/health_checker.sh" >> temp_cron
-            crontab temp_cron
-            rm -f temp_cron
-          EOF
