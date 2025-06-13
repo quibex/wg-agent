@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        v5.29.3
-// source: api/agent.proto
+// source: api/proto/agent.proto
 
 package proto
 
@@ -35,7 +35,7 @@ type AddPeerRequest struct {
 
 func (x *AddPeerRequest) Reset() {
 	*x = AddPeerRequest{}
-	mi := &file_api_agent_proto_msgTypes[0]
+	mi := &file_api_proto_agent_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -47,7 +47,7 @@ func (x *AddPeerRequest) String() string {
 func (*AddPeerRequest) ProtoMessage() {}
 
 func (x *AddPeerRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_agent_proto_msgTypes[0]
+	mi := &file_api_proto_agent_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -60,7 +60,7 @@ func (x *AddPeerRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AddPeerRequest.ProtoReflect.Descriptor instead.
 func (*AddPeerRequest) Descriptor() ([]byte, []int) {
-	return file_api_agent_proto_rawDescGZIP(), []int{0}
+	return file_api_proto_agent_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *AddPeerRequest) GetInterface() string {
@@ -109,7 +109,7 @@ type AddPeerResponse struct {
 
 func (x *AddPeerResponse) Reset() {
 	*x = AddPeerResponse{}
-	mi := &file_api_agent_proto_msgTypes[1]
+	mi := &file_api_proto_agent_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -121,7 +121,7 @@ func (x *AddPeerResponse) String() string {
 func (*AddPeerResponse) ProtoMessage() {}
 
 func (x *AddPeerResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_agent_proto_msgTypes[1]
+	mi := &file_api_proto_agent_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -134,7 +134,7 @@ func (x *AddPeerResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AddPeerResponse.ProtoReflect.Descriptor instead.
 func (*AddPeerResponse) Descriptor() ([]byte, []int) {
-	return file_api_agent_proto_rawDescGZIP(), []int{1}
+	return file_api_proto_agent_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *AddPeerResponse) GetListenPort() int32 {
@@ -168,7 +168,7 @@ type RemovePeerRequest struct {
 
 func (x *RemovePeerRequest) Reset() {
 	*x = RemovePeerRequest{}
-	mi := &file_api_agent_proto_msgTypes[2]
+	mi := &file_api_proto_agent_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -180,7 +180,7 @@ func (x *RemovePeerRequest) String() string {
 func (*RemovePeerRequest) ProtoMessage() {}
 
 func (x *RemovePeerRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_agent_proto_msgTypes[2]
+	mi := &file_api_proto_agent_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -193,7 +193,7 @@ func (x *RemovePeerRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemovePeerRequest.ProtoReflect.Descriptor instead.
 func (*RemovePeerRequest) Descriptor() ([]byte, []int) {
-	return file_api_agent_proto_rawDescGZIP(), []int{2}
+	return file_api_proto_agent_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *RemovePeerRequest) GetInterface() string {
@@ -220,7 +220,7 @@ type DisablePeerRequest struct {
 
 func (x *DisablePeerRequest) Reset() {
 	*x = DisablePeerRequest{}
-	mi := &file_api_agent_proto_msgTypes[3]
+	mi := &file_api_proto_agent_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -232,7 +232,7 @@ func (x *DisablePeerRequest) String() string {
 func (*DisablePeerRequest) ProtoMessage() {}
 
 func (x *DisablePeerRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_agent_proto_msgTypes[3]
+	mi := &file_api_proto_agent_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -245,7 +245,7 @@ func (x *DisablePeerRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DisablePeerRequest.ProtoReflect.Descriptor instead.
 func (*DisablePeerRequest) Descriptor() ([]byte, []int) {
-	return file_api_agent_proto_rawDescGZIP(), []int{3}
+	return file_api_proto_agent_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *DisablePeerRequest) GetInterface() string {
@@ -272,7 +272,7 @@ type EnablePeerRequest struct {
 
 func (x *EnablePeerRequest) Reset() {
 	*x = EnablePeerRequest{}
-	mi := &file_api_agent_proto_msgTypes[4]
+	mi := &file_api_proto_agent_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -284,7 +284,7 @@ func (x *EnablePeerRequest) String() string {
 func (*EnablePeerRequest) ProtoMessage() {}
 
 func (x *EnablePeerRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_agent_proto_msgTypes[4]
+	mi := &file_api_proto_agent_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -297,7 +297,7 @@ func (x *EnablePeerRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EnablePeerRequest.ProtoReflect.Descriptor instead.
 func (*EnablePeerRequest) Descriptor() ([]byte, []int) {
-	return file_api_agent_proto_rawDescGZIP(), []int{4}
+	return file_api_proto_agent_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *EnablePeerRequest) GetInterface() string {
@@ -324,7 +324,7 @@ type GetPeerInfoRequest struct {
 
 func (x *GetPeerInfoRequest) Reset() {
 	*x = GetPeerInfoRequest{}
-	mi := &file_api_agent_proto_msgTypes[5]
+	mi := &file_api_proto_agent_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -336,7 +336,7 @@ func (x *GetPeerInfoRequest) String() string {
 func (*GetPeerInfoRequest) ProtoMessage() {}
 
 func (x *GetPeerInfoRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_agent_proto_msgTypes[5]
+	mi := &file_api_proto_agent_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -349,7 +349,7 @@ func (x *GetPeerInfoRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPeerInfoRequest.ProtoReflect.Descriptor instead.
 func (*GetPeerInfoRequest) Descriptor() ([]byte, []int) {
-	return file_api_agent_proto_rawDescGZIP(), []int{5}
+	return file_api_proto_agent_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *GetPeerInfoRequest) GetInterface() string {
@@ -381,7 +381,7 @@ type GetPeerInfoResponse struct {
 
 func (x *GetPeerInfoResponse) Reset() {
 	*x = GetPeerInfoResponse{}
-	mi := &file_api_agent_proto_msgTypes[6]
+	mi := &file_api_proto_agent_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -393,7 +393,7 @@ func (x *GetPeerInfoResponse) String() string {
 func (*GetPeerInfoResponse) ProtoMessage() {}
 
 func (x *GetPeerInfoResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_agent_proto_msgTypes[6]
+	mi := &file_api_proto_agent_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -406,7 +406,7 @@ func (x *GetPeerInfoResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPeerInfoResponse.ProtoReflect.Descriptor instead.
 func (*GetPeerInfoResponse) Descriptor() ([]byte, []int) {
-	return file_api_agent_proto_rawDescGZIP(), []int{6}
+	return file_api_proto_agent_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *GetPeerInfoResponse) GetPublicKey() string {
@@ -467,7 +467,7 @@ type ListPeersRequest struct {
 
 func (x *ListPeersRequest) Reset() {
 	*x = ListPeersRequest{}
-	mi := &file_api_agent_proto_msgTypes[7]
+	mi := &file_api_proto_agent_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -479,7 +479,7 @@ func (x *ListPeersRequest) String() string {
 func (*ListPeersRequest) ProtoMessage() {}
 
 func (x *ListPeersRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_agent_proto_msgTypes[7]
+	mi := &file_api_proto_agent_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -492,7 +492,7 @@ func (x *ListPeersRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListPeersRequest.ProtoReflect.Descriptor instead.
 func (*ListPeersRequest) Descriptor() ([]byte, []int) {
-	return file_api_agent_proto_rawDescGZIP(), []int{7}
+	return file_api_proto_agent_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *ListPeersRequest) GetInterface() string {
@@ -511,7 +511,7 @@ type ListPeersResponse struct {
 
 func (x *ListPeersResponse) Reset() {
 	*x = ListPeersResponse{}
-	mi := &file_api_agent_proto_msgTypes[8]
+	mi := &file_api_proto_agent_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -523,7 +523,7 @@ func (x *ListPeersResponse) String() string {
 func (*ListPeersResponse) ProtoMessage() {}
 
 func (x *ListPeersResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_agent_proto_msgTypes[8]
+	mi := &file_api_proto_agent_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -536,7 +536,7 @@ func (x *ListPeersResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListPeersResponse.ProtoReflect.Descriptor instead.
 func (*ListPeersResponse) Descriptor() ([]byte, []int) {
-	return file_api_agent_proto_rawDescGZIP(), []int{8}
+	return file_api_proto_agent_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *ListPeersResponse) GetPeers() []*PeerInfo {
@@ -558,7 +558,7 @@ type PeerInfo struct {
 
 func (x *PeerInfo) Reset() {
 	*x = PeerInfo{}
-	mi := &file_api_agent_proto_msgTypes[9]
+	mi := &file_api_proto_agent_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -570,7 +570,7 @@ func (x *PeerInfo) String() string {
 func (*PeerInfo) ProtoMessage() {}
 
 func (x *PeerInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_api_agent_proto_msgTypes[9]
+	mi := &file_api_proto_agent_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -583,7 +583,7 @@ func (x *PeerInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PeerInfo.ProtoReflect.Descriptor instead.
 func (*PeerInfo) Descriptor() ([]byte, []int) {
-	return file_api_agent_proto_rawDescGZIP(), []int{9}
+	return file_api_proto_agent_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *PeerInfo) GetPublicKey() string {
@@ -626,7 +626,7 @@ type GeneratePeerConfigRequest struct {
 
 func (x *GeneratePeerConfigRequest) Reset() {
 	*x = GeneratePeerConfigRequest{}
-	mi := &file_api_agent_proto_msgTypes[10]
+	mi := &file_api_proto_agent_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -638,7 +638,7 @@ func (x *GeneratePeerConfigRequest) String() string {
 func (*GeneratePeerConfigRequest) ProtoMessage() {}
 
 func (x *GeneratePeerConfigRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_agent_proto_msgTypes[10]
+	mi := &file_api_proto_agent_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -651,7 +651,7 @@ func (x *GeneratePeerConfigRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GeneratePeerConfigRequest.ProtoReflect.Descriptor instead.
 func (*GeneratePeerConfigRequest) Descriptor() ([]byte, []int) {
-	return file_api_agent_proto_rawDescGZIP(), []int{10}
+	return file_api_proto_agent_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *GeneratePeerConfigRequest) GetInterface() string {
@@ -695,7 +695,7 @@ type GeneratePeerConfigResponse struct {
 
 func (x *GeneratePeerConfigResponse) Reset() {
 	*x = GeneratePeerConfigResponse{}
-	mi := &file_api_agent_proto_msgTypes[11]
+	mi := &file_api_proto_agent_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -707,7 +707,7 @@ func (x *GeneratePeerConfigResponse) String() string {
 func (*GeneratePeerConfigResponse) ProtoMessage() {}
 
 func (x *GeneratePeerConfigResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_agent_proto_msgTypes[11]
+	mi := &file_api_proto_agent_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -720,7 +720,7 @@ func (x *GeneratePeerConfigResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GeneratePeerConfigResponse.ProtoReflect.Descriptor instead.
 func (*GeneratePeerConfigResponse) Descriptor() ([]byte, []int) {
-	return file_api_agent_proto_rawDescGZIP(), []int{11}
+	return file_api_proto_agent_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *GeneratePeerConfigResponse) GetPrivateKey() string {
@@ -758,11 +758,11 @@ func (x *GeneratePeerConfigResponse) GetAllowedIp() string {
 	return ""
 }
 
-var File_api_agent_proto protoreflect.FileDescriptor
+var File_api_proto_agent_proto protoreflect.FileDescriptor
 
-const file_api_agent_proto_rawDesc = "" +
+const file_api_proto_agent_proto_rawDesc = "" +
 	"\n" +
-	"\x0fapi/agent.proto\x12\awgagent\x1a\x1bgoogle/protobuf/empty.proto\"\xa6\x01\n" +
+	"\x15api/proto/agent.proto\x12\awgagent\x1a\x1bgoogle/protobuf/empty.proto\"\xa6\x01\n" +
 	"\x0eAddPeerRequest\x12\x1c\n" +
 	"\tinterface\x18\x01 \x01(\tR\tinterface\x12\x1d\n" +
 	"\n" +
@@ -839,22 +839,22 @@ const file_api_agent_proto_rawDesc = "" +
 	"EnablePeer\x12\x1a.wgagent.EnablePeerRequest\x1a\x16.google.protobuf.Empty\x12H\n" +
 	"\vGetPeerInfo\x12\x1b.wgagent.GetPeerInfoRequest\x1a\x1c.wgagent.GetPeerInfoResponse\x12B\n" +
 	"\tListPeers\x12\x19.wgagent.ListPeersRequest\x1a\x1a.wgagent.ListPeersResponse\x12]\n" +
-	"\x12GeneratePeerConfig\x12\".wgagent.GeneratePeerConfigRequest\x1a#.wgagent.GeneratePeerConfigResponseB)Z'github.com/our-org/wg-project/api/protob\x06proto3"
+	"\x12GeneratePeerConfig\x12\".wgagent.GeneratePeerConfigRequest\x1a#.wgagent.GeneratePeerConfigResponseB&Z$github.com/quibex/wg-agent/api/protob\x06proto3"
 
 var (
-	file_api_agent_proto_rawDescOnce sync.Once
-	file_api_agent_proto_rawDescData []byte
+	file_api_proto_agent_proto_rawDescOnce sync.Once
+	file_api_proto_agent_proto_rawDescData []byte
 )
 
-func file_api_agent_proto_rawDescGZIP() []byte {
-	file_api_agent_proto_rawDescOnce.Do(func() {
-		file_api_agent_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_api_agent_proto_rawDesc), len(file_api_agent_proto_rawDesc)))
+func file_api_proto_agent_proto_rawDescGZIP() []byte {
+	file_api_proto_agent_proto_rawDescOnce.Do(func() {
+		file_api_proto_agent_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_api_proto_agent_proto_rawDesc), len(file_api_proto_agent_proto_rawDesc)))
 	})
-	return file_api_agent_proto_rawDescData
+	return file_api_proto_agent_proto_rawDescData
 }
 
-var file_api_agent_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
-var file_api_agent_proto_goTypes = []any{
+var file_api_proto_agent_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
+var file_api_proto_agent_proto_goTypes = []any{
 	(*AddPeerRequest)(nil),             // 0: wgagent.AddPeerRequest
 	(*AddPeerResponse)(nil),            // 1: wgagent.AddPeerResponse
 	(*RemovePeerRequest)(nil),          // 2: wgagent.RemovePeerRequest
@@ -869,7 +869,7 @@ var file_api_agent_proto_goTypes = []any{
 	(*GeneratePeerConfigResponse)(nil), // 11: wgagent.GeneratePeerConfigResponse
 	(*emptypb.Empty)(nil),              // 12: google.protobuf.Empty
 }
-var file_api_agent_proto_depIdxs = []int32{
+var file_api_proto_agent_proto_depIdxs = []int32{
 	9,  // 0: wgagent.ListPeersResponse.peers:type_name -> wgagent.PeerInfo
 	0,  // 1: wgagent.WireGuardAgent.AddPeer:input_type -> wgagent.AddPeerRequest
 	2,  // 2: wgagent.WireGuardAgent.RemovePeer:input_type -> wgagent.RemovePeerRequest
@@ -892,26 +892,26 @@ var file_api_agent_proto_depIdxs = []int32{
 	0,  // [0:1] is the sub-list for field type_name
 }
 
-func init() { file_api_agent_proto_init() }
-func file_api_agent_proto_init() {
-	if File_api_agent_proto != nil {
+func init() { file_api_proto_agent_proto_init() }
+func file_api_proto_agent_proto_init() {
+	if File_api_proto_agent_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_agent_proto_rawDesc), len(file_api_agent_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_proto_agent_proto_rawDesc), len(file_api_proto_agent_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_api_agent_proto_goTypes,
-		DependencyIndexes: file_api_agent_proto_depIdxs,
-		MessageInfos:      file_api_agent_proto_msgTypes,
+		GoTypes:           file_api_proto_agent_proto_goTypes,
+		DependencyIndexes: file_api_proto_agent_proto_depIdxs,
+		MessageInfos:      file_api_proto_agent_proto_msgTypes,
 	}.Build()
-	File_api_agent_proto = out.File
-	file_api_agent_proto_goTypes = nil
-	file_api_agent_proto_depIdxs = nil
+	File_api_proto_agent_proto = out.File
+	file_api_proto_agent_proto_goTypes = nil
+	file_api_proto_agent_proto_depIdxs = nil
 }

@@ -3,10 +3,10 @@
 # Генерация protobuf файлов
 proto:
 	@echo "Генерация protobuf файлов..."
-	@mkdir -p api/proto
-	protoc --go_out=. --go_opt=paths=source_relative \
-		--go-grpc_out=. --go-grpc_opt=paths=source_relative \
-		api/agent.proto
+	@mkdir -p pkg
+	protoc --go_out=pkg --go_opt=paths=source_relative \
+		--go-grpc_out=pkg --go-grpc_opt=paths=source_relative \
+		api/proto/agent.proto
 
 # Сборка wg-agent
 build:

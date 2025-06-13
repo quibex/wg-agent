@@ -25,7 +25,7 @@ chmod 644 "$CA_CERT"
 echo "Generating server certificate for wg-agent..."
 openssl genrsa -out "$SERVER_KEY" 4096
 openssl req -new -key "$SERVER_KEY" -out "$CERTS_DIR/server.csr" \
-    -subj "/C=RU/ST=Moscow/L=Moscow/O=WG-Project/OU=Server/CN=wg-agent"
+    -subj "/C=RU/ST=Moscow/L=Moscow/O=WG-Agent/OU=Server/CN=wg-agent"
 
 cat > "$CERTS_DIR/server.conf" << EOF
 [req]

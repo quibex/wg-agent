@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v5.29.3
-// source: api/agent.proto
+// source: api/proto/agent.proto
 
 package proto
 
@@ -352,5 +352,5 @@ var WireGuardAgent_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "api/agent.proto",
+	Metadata: "api/proto/agent.proto",
 }

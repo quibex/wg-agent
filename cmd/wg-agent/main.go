@@ -6,9 +6,9 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/our-org/wg-project/internal/config"
-	"github.com/our-org/wg-project/internal/server"
-	"github.com/our-org/wg-project/internal/wireguard"
+	"github.com/quibex/wg-agent/internal/config"
+	"github.com/quibex/wg-agent/internal/server"
+	"github.com/quibex/wg-agent/internal/wireguard"
 )
 
 func main() {

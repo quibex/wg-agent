@@ -17,7 +17,7 @@ fi
 echo "Генерация CA (Certificate Authority)..."
 openssl genrsa -out "$CA_KEY" 4096
 openssl req -new -x509 -days 3650 -key "$CA_KEY" -out "$CA_CERT" \
-    -subj "/C=RU/ST=Moscow/L=Moscow/O=WG-Project/OU=CA/CN=wg-project-ca"
+    -subj "/C=RU/ST=Moscow/L=Moscow/O=WG-Agent/OU=CA/CN=wg-agent-ca"
 
 chmod 600 "$CA_KEY"
 chmod 644 "$CA_CERT"

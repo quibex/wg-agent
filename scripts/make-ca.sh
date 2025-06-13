@@ -16,12 +16,12 @@ mkdir -p "$CERTS_DIR"
 echo "Generating CA..."
 openssl genrsa -out "$CA_KEY" 4096
 openssl req -new -x509 -days 3650 -key "$CA_KEY" -out "$CA_CERT" \
-    -subj "/C=RU/ST=Moscow/L=Moscow/O=WG-Project/OU=CA/CN=wg-project-ca"
+    -subj "/C=RU/ST=Moscow/L=Moscow/O=WG-Agent/OU=CA/CN=wg-agent-ca"
 
 echo "Generating server certificate for wg-agent..."
 openssl genrsa -out "$SERVER_KEY" 4096
 openssl req -new -key "$SERVER_KEY" -out "$CERTS_DIR/server.csr" \
-    -subj "/C=RU/ST=Moscow/L=Moscow/O=WG-Project/OU=Server/CN=wg-agent"
+    -subj "/C=RU/ST=Moscow/L=Moscow/O=WG-Agent/OU=Server/CN=wg-agent"
 
 cat > "$CERTS_DIR/server.conf" << EOF
 [req]
@@ -48,7 +48,7 @@ openssl x509 -req -days 365 -in "$CERTS_DIR/server.csr" -CA "$CA_CERT" -CAkey "$
 echo "Generating client certificate for lime-bot..."
 openssl genrsa -out "$CLIENT_KEY" 4096
 openssl req -new -key "$CLIENT_KEY" -out "$CERTS_DIR/client.csr" \
-    -subj "/C=RU/ST=Moscow/L=Moscow/O=WG-Project/OU=Client/CN=lime-bot"
+    -subj "/C=RU/ST=Moscow/L=Moscow/O=WG-Agent/OU=Client/CN=lime-bot"
 
 openssl x509 -req -days 365 -in "$CERTS_DIR/client.csr" -CA "$CA_CERT" -CAkey "$CA_KEY" \
     -CAcreateserial -out "$CLIENT_CERT"

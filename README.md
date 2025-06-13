@@ -34,7 +34,7 @@ docker run -d \
   --cap-add NET_ADMIN \
   --device /dev/net/tun \
   -v /etc/wg-agent:/etc/wg-agent:ro \
-  your-org/wg-agent:latest
+  quibex/wg-agent:latest
 ```
 
 ### 3. Configuration

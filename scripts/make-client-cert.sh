@@ -25,7 +25,7 @@ chmod 644 "$CA_CERT"
 echo "Генерация клиентского сертификата для lime-bot..."
 openssl genrsa -out "$CLIENT_KEY" 4096
 openssl req -new -key "$CLIENT_KEY" -out "$CERTS_DIR/client.csr" \
-    -subj "/C=RU/ST=Moscow/L=Moscow/O=WG-Project/OU=Client/CN=lime-bot"
+    -subj "/C=RU/ST=Moscow/L=Moscow/O=WG-Agent/OU=Client/CN=lime-bot"
 
 openssl x509 -req -days 365 -in "$CERTS_DIR/client.csr" -CA "$CA_CERT" -CAkey "$CA_KEY" \
     -CAcreateserial -out "$CLIENT_CERT"

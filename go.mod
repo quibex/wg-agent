@@ -1,4 +1,4 @@
-module github.com/our-org/wg-project
+module github.com/quibex/wg-agent
 
 go 1.22
 

@@ -3,7 +3,7 @@ package wgagent;
 
 import "google/protobuf/empty.proto";
 
-option go_package = "github.com/our-org/wg-project/api/proto";
+option go_package = "github.com/quibex/wg-agent/api/proto";
 
 service WireGuardAgent {
   // Основные операции с пирами

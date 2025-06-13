@@ -9,10 +9,10 @@ import (
 	"net/http"
 	"os"
 
-	proto "github.com/our-org/wg-project/api"
-	"github.com/our-org/wg-project/internal/config"
-	"github.com/our-org/wg-project/internal/ratelimit"
-	"github.com/our-org/wg-project/internal/wireguard"
+	"github.com/quibex/wg-agent/internal/config"
+	"github.com/quibex/wg-agent/internal/ratelimit"
+	"github.com/quibex/wg-agent/internal/wireguard"
+	proto "github.com/quibex/wg-agent/pkg/api/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )

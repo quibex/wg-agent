@@ -8,8 +8,8 @@ import (
 	"net"
 	"time"
 
-	proto "github.com/our-org/wg-project/api"
-	"github.com/our-org/wg-project/internal/wireguard"
+	"github.com/quibex/wg-agent/internal/wireguard"
+	proto "github.com/quibex/wg-agent/pkg/api/proto"
 	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
