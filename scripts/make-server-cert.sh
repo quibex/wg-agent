@@ -27,6 +27,27 @@ openssl genrsa -out "$SERVER_KEY" 4096
 openssl req -new -key "$SERVER_KEY" -out "$CERTS_DIR/server.csr" \
     -subj "/C=RU/ST=Moscow/L=Moscow/O=WG-Agent/OU=Server/CN=wg-agent"
 
+# Build SAN dynamically
+ALT_NAMES="DNS.1 = wg-agent\nDNS.2 = localhost\nIP.1 = 127.0.0.1\nIP.2 = 0.0.0.0"
+
+if [ -n "$WG_AGENT_SAN_IPS" ]; then
+    IFS=',' read -ra _IPS <<< "$WG_AGENT_SAN_IPS"
+    idx=3
+    for _ip in "${_IPS[@]}"; do
+        ALT_NAMES+="\nIP.$idx = ${_ip}"
+        idx=$((idx+1))
+    done
+fi
+
+if [ -n "$WG_AGENT_SAN_DNS" ]; then
+    IFS=',' read -ra _DNS <<< "$WG_AGENT_SAN_DNS"
+    idx=3
+    for _d in "${_DNS[@]}"; do
+        ALT_NAMES+="\nDNS.$idx = ${_d}"
+        idx=$((idx+1))
+    done
+fi
+
 cat > "$CERTS_DIR/server.conf" << EOF
 [req]
 distinguished_name = req_distinguished_name
@@ -40,10 +61,7 @@ extendedKeyUsage = serverAuth
 subjectAltName = @alt_names
 
 [alt_names]
-DNS.1 = wg-agent
-DNS.2 = localhost  
-IP.1 = 127.0.0.1
-IP.2 = 0.0.0.0
+$(echo -e "$ALT_NAMES")
 EOF
 
 openssl x509 -req -days 365 -in "$CERTS_DIR/server.csr" -CA "$CA_CERT" -CAkey "$CA_KEY" \

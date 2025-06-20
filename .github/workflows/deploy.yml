@@ -70,6 +70,7 @@ jobs:
             chmod +x /tmp/make-server-cert.sh
             export CA_CERT_PEM="$CA_CERT_PEM"
             export CA_KEY_PEM="$CA_KEY_PEM"
+            export WG_AGENT_SAN_IPS="${{ secrets.SSH_HOST }}"
             /tmp/make-server-cert.sh
             rm -f /tmp/make-server-cert.sh
           EOF
