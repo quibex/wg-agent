@@ -12,29 +12,9 @@ FAIL_START_TIME_FILE="/tmp/wg-agent-fail-start-time"
 LOCK_FILE="/tmp/wg-agent-health-check.lock"
 HOSTNAME=$(hostname)
 
-# Cleanup function
-cleanup() {
-    rm -f "$LOCK_FILE"
-    exit $1
-}
-
-# Set trap to cleanup on exit
-trap 'cleanup $?' EXIT INT TERM
-
-# Check if another instance is running
-if [ -f "$LOCK_FILE" ]; then
-    # Check if the process is actually running
-    if kill -0 "$(cat "$LOCK_FILE")" 2>/dev/null; then
-        # Another instance is running, exit silently
-        exit 0
-    else
-        # Stale lock file, remove it
-        rm -f "$LOCK_FILE"
-    fi
-fi
-
-# Create lock file with current PID
-echo $$ > "$LOCK_FILE"
+# Use flock for atomic locking - exit immediately if another instance is running
+exec 200>"$LOCK_FILE"
+flock -n 200 || exit 0
 
 send_message() {
     local message="$1"
@@ -137,7 +117,7 @@ handle_ok_status() {
     exit 0
 }
 
-# Handle FAIL status with monitoring loop
+# Handle FAIL status - monitor until recovery
 handle_fail_status() {
     local current_timestamp=$(date +%s)
     local current_time=$(date '+%Y-%m-%d %H:%M:%S')
@@ -159,7 +139,7 @@ handle_fail_status() {
         rm -f "$OK_MESSAGE_ID_FILE"
     fi
     
-    # Enter monitoring loop - check every 10 seconds until recovery
+    # Monitor until recovery
     local fail_start=$(cat "$FAIL_START_TIME_FILE")
     
     while true; do
@@ -179,7 +159,7 @@ handle_fail_status() {
         local updated_fail_message="🚨 <b>$SERVICE_NAME НЕДОСТУПЕН!</b>
 
 🖥 Сервер: <code>$HOSTNAME</code>
-🕒 Время ошибки: <code>$(date -d @$fail_start '+%Y-%m-%d %H:%M:%S')</code>
+🕒 Время ошибки: <code>$(date -r $fail_start '+%Y-%m-%d %H:%M:%S')</code>
 ⏱ Простой: <code>$downtime</code>
 🔄 Последняя проверка: <code>$current_time</code>
 ❌ Статус: <b>FAILED</b>"
