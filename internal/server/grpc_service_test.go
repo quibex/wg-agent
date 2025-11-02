@@ -5,9 +5,10 @@ import (
 	"io"
 	"testing"
 
-	proto "github.com/our-org/wg-project/api"
-	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
 	"log/slog"
+
+	proto "github.com/quibex/wg-agent/pkg/api/proto"
+	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
 )
 
 // errClient is a wireguard.Client that returns an error from Device
@@ -26,7 +27,7 @@ func (errClient) Close() error { return nil }
 
 func TestAddPeer_DeviceError(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
-	svc := newAgentService(logger, errClient{}, "wg0")
+	svc := newAgentService(logger, errClient{}, "wg0", "10.8.0.0/24")
 
 	_, err := svc.AddPeer(context.Background(), &proto.AddPeerRequest{
 		PublicKey:  "jNQKmw+IF/llmxOlGwrMxaHiPiG5xQyBq3/OmfEpuQM=",
