@@ -37,15 +37,10 @@ check_env_file() {
 validate_env_vars() {
     local missing_vars=()
     
+    # Only these 3 are required
     [ -z "$CA_CERT_PEM" ] && missing_vars+=("CA_CERT_PEM")
     [ -z "$CA_KEY_PEM" ] && missing_vars+=("CA_KEY_PEM")
-    [ -z "$WG_AGENT_INTERFACE" ] && missing_vars+=("WG_AGENT_INTERFACE")
-    [ -z "$WG_AGENT_ADDR" ] && missing_vars+=("WG_AGENT_ADDR")
-    [ -z "$WG_AGENT_HTTP_ADDR" ] && missing_vars+=("WG_AGENT_HTTP_ADDR")
-    [ -z "$WG_AGENT_RATE_LIMIT" ] && missing_vars+=("WG_AGENT_RATE_LIMIT")
     [ -z "$SERVER_PUBLIC_IP" ] && missing_vars+=("SERVER_PUBLIC_IP")
-    [ -z "$WG_SERVER_PORT" ] && missing_vars+=("WG_SERVER_PORT")
-    [ -z "$WG_SERVER_IP" ] && missing_vars+=("WG_SERVER_IP")
     
     if [ ${#missing_vars[@]} -ne 0 ]; then
         echo "❌ Missing required environment variables:"
@@ -55,7 +50,21 @@ validate_env_vars() {
         exit 1
     fi
     
-    echo "✅ All required environment variables are set"
+    # Set defaults for optional vars
+    WG_AGENT_INTERFACE="${WG_AGENT_INTERFACE:-wg0}"
+    WG_AGENT_ADDR="${WG_AGENT_ADDR:-0.0.0.0:7443}"
+    WG_AGENT_HTTP_ADDR="${WG_AGENT_HTTP_ADDR:-0.0.0.0:8080}"
+    WG_AGENT_RATE_LIMIT="${WG_AGENT_RATE_LIMIT:-10}"
+    WG_SERVER_PORT="${WG_SERVER_PORT:-51820}"
+    WG_SERVER_IP="${WG_SERVER_IP:-10.8.0.1/24}"
+    
+    echo "✅ Configuration validated"
+    echo "   Interface: $WG_AGENT_INTERFACE"
+    echo "   gRPC Addr: $WG_AGENT_ADDR"
+    echo "   HTTP Addr: $WG_AGENT_HTTP_ADDR"
+    echo "   Rate Limit: $WG_AGENT_RATE_LIMIT"
+    echo "   WG Port: $WG_SERVER_PORT"
+    echo "   WG IP Range: $WG_SERVER_IP"
 }
 
 install_dependencies() {
