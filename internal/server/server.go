@@ -68,8 +68,13 @@ func (s *Server) Start() error {
 	)
 
 	// Регистрация сервиса
-	subnet := "10.8.0.0/24" // TODO: добавить в конфигурацию
-	proto.RegisterWireGuardAgentServer(grpcServer, newAgentService(s.logger, s.wgClient, s.config.Interface, subnet))
+	proto.RegisterWireGuardAgentServer(grpcServer, newAgentService(
+		s.logger,
+		s.wgClient,
+		s.config.Interface,
+		s.config.Subnet,
+		s.config.ServerEndpoint(),
+	))
 
 	s.logger.Info("gRPC server started", "addr", s.config.Addr)
 

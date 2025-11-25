@@ -17,24 +17,29 @@ import (
 // agentService реализует WireGuardAgentServer
 type agentService struct {
 	proto.UnimplementedWireGuardAgentServer
-	log       *slog.Logger
-	wgClient  wireguard.Client
-	defIface  string
-	peerStore *wireguard.PeerStore
-	subnet    string // подсеть для выделения IP (например "10.8.0.0/24")
+	log            *slog.Logger
+	wgClient       wireguard.Client
+	defIface       string
+	peerStore      *wireguard.PeerStore
+	subnet         string // подсеть для выделения IP (например "10.8.0.0/24")
+	serverEndpoint string // endpoint сервера для клиентов (например "vpn.example.com:51820")
 }
 
-func newAgentService(log *slog.Logger, wgClient wireguard.Client, defIface, subnet string) *agentService {
+func newAgentService(log *slog.Logger, wgClient wireguard.Client, defIface, subnet, serverEndpoint string) *agentService {
 	return &agentService{
-		log:       log,
-		wgClient:  wgClient,
-		defIface:  defIface,
-		peerStore: wireguard.NewPeerStore(),
-		subnet:    subnet,
+		log:            log,
+		wgClient:       wgClient,
+		defIface:       defIface,
+		peerStore:      wireguard.NewPeerStore(),
+		subnet:         subnet,
+		serverEndpoint: serverEndpoint,
 	}
 }
 
-// AddPeer добавляет пира без перезапуска интерфейса
+// AddPeer добавляет пира в WireGuard интерфейс.
+//
+// Используйте когда у вас уже есть публичный ключ клиента.
+// НЕ генерирует конфиг/QR - для этого используйте GeneratePeerConfig().
 func (a *agentService) AddPeer(ctx context.Context, req *proto.AddPeerRequest) (*proto.AddPeerResponse, error) {
 	iface := req.Interface
 	if iface == "" {
@@ -43,14 +48,20 @@ func (a *agentService) AddPeer(ctx context.Context, req *proto.AddPeerRequest) (
 
 	// Валидация входных данных
 	if err := wireguard.ValidatePublicKey(req.PublicKey); err != nil {
-		return nil, errors.New("invalid public_key")
+		return nil, errors.New("invalid public_key: must be base64-encoded 32 bytes")
 	}
 	if err := wireguard.ValidateAllowedIP(req.AllowedIp); err != nil {
-		return nil, errors.New("invalid allowed_ip")
+		return nil, errors.New("invalid allowed_ip: must be in CIDR format (e.g., 10.8.0.10/32)")
 	}
 
 	key, _ := wgtypes.ParseKey(req.PublicKey)
 	_, ipNet, _ := net.ParseCIDR(req.AllowedIp)
+
+	// Настройка keepalive (по умолчанию 25 секунд)
+	keepalive := time.Duration(req.KeepaliveS) * time.Second
+	if req.KeepaliveS == 0 {
+		keepalive = 25 * time.Second
+	}
 
 	cfg := wgtypes.Config{
 		Peers: []wgtypes.PeerConfig{
@@ -59,50 +70,35 @@ func (a *agentService) AddPeer(ctx context.Context, req *proto.AddPeerRequest) (
 				AllowedIPs:                  []net.IPNet{*ipNet},
 				UpdateOnly:                  false,
 				ReplaceAllowedIPs:           true,
-				PersistentKeepaliveInterval: func() *time.Duration { d := time.Duration(req.KeepaliveS) * time.Second; return &d }(),
+				PersistentKeepaliveInterval: &keepalive,
 			},
 		},
 	}
 
 	if err := a.wgClient.ConfigureDevice(iface, cfg); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to configure device: %w", err)
 	}
 
 	device, err := a.wgClient.Device(iface)
 	if err != nil {
 		a.log.Error("failed to get device after add", "error", err)
-		return nil, err
+		return nil, fmt.Errorf("failed to get device info: %w", err)
 	}
 
 	// Добавляем в store
 	a.peerStore.AddPeer(req.PublicKey, req.PeerId, req.AllowedIp)
 
-	// Генерируем конфигурацию и QR код для клиента
-	serverPublicKey := device.PublicKey.String()
-	serverEndpoint := fmt.Sprintf("YOUR_SERVER_IP:%d", device.ListenPort)
-
-	config := wireguard.GenerateClientConfig(
-		"CLIENT_PRIVATE_KEY", // будет заменено lime-bot на фактический ключ
-		serverPublicKey,
-		serverEndpoint,
-		"0.0.0.0/0",
-		"1.1.1.1, 1.0.0.1",
-		req.AllowedIp,
+	a.log.Info("peer added",
+		"public_key", req.PublicKey,
+		"peer_id", req.PeerId,
+		"allowed_ip", req.AllowedIp,
 	)
 
-	// Генерируем QR код
-	qrCode, err := wireguard.GenerateQRCode(config)
-	if err != nil {
-		a.log.Warn("failed to generate QR code", "error", err)
-		qrCode = "" // не критичная ошибка
-	}
-
-	a.log.Info("peer added", "public_key", req.PublicKey, "peer_id", req.PeerId)
-
+	// Возвращаем информацию о сервере для ручной настройки клиента
 	return &proto.AddPeerResponse{
-		ListenPort: int32(device.ListenPort),
-		Config:     config,
-		QrCode:     qrCode,
+		ListenPort:      int32(device.ListenPort),
+		ServerPublicKey: device.PublicKey.String(),
+		ServerEndpoint:  a.serverEndpoint,
 	}, nil
 }
 
@@ -284,11 +280,24 @@ func (a *agentService) GetPeerInfo(ctx context.Context, req *proto.GetPeerInfoRe
 	return response, nil
 }
 
-// GeneratePeerConfig генерирует новую пару ключей и конфигурацию
+// GeneratePeerConfig генерирует полную конфигурацию для нового клиента.
+//
+// Что делает:
+// 1. Генерирует пару ключей (приватный + публичный)
+// 2. Выделяет свободный IP из подсети сервера
+// 3. Создает готовый конфиг для клиента WireGuard
+// 4. Генерирует QR-код для мобильных приложений
+//
+// ВАЖНО: После вызова нужно добавить пира через AddPeer()!
 func (a *agentService) GeneratePeerConfig(ctx context.Context, req *proto.GeneratePeerConfigRequest) (*proto.GeneratePeerConfigResponse, error) {
 	iface := req.Interface
 	if iface == "" {
 		iface = a.defIface
+	}
+
+	// Проверяем, что serverEndpoint настроен
+	if a.serverEndpoint == "" {
+		return nil, errors.New("server endpoint not configured: set SERVER_PUBLIC_IP environment variable")
 	}
 
 	// Генерируем пару ключей
@@ -310,21 +319,22 @@ func (a *agentService) GeneratePeerConfig(ctx context.Context, req *proto.Genera
 		return nil, fmt.Errorf("failed to allocate IP: %w", err)
 	}
 
-	// Создаем конфигурацию
+	// Параметры конфигурации с дефолтами
 	serverPublicKey := device.PublicKey.String()
 	allowedIPs := req.AllowedIps
 	if allowedIPs == "" {
-		allowedIPs = "0.0.0.0/0"
+		allowedIPs = "0.0.0.0/0" // весь трафик через VPN
 	}
 	dnsServers := req.DnsServers
 	if dnsServers == "" {
-		dnsServers = "1.1.1.1, 1.0.0.1"
+		dnsServers = "1.1.1.1, 1.0.0.1" // Cloudflare DNS
 	}
 
+	// Генерируем конфигурацию клиента
 	config := wireguard.GenerateClientConfig(
 		privateKey,
 		serverPublicKey,
-		req.ServerEndpoint,
+		a.serverEndpoint, // используем endpoint из конфигурации сервера
 		allowedIPs,
 		dnsServers,
 		clientIP,
@@ -336,6 +346,11 @@ func (a *agentService) GeneratePeerConfig(ctx context.Context, req *proto.Genera
 		a.log.Warn("failed to generate QR code", "error", err)
 		qrCode = "" // не критичная ошибка
 	}
+
+	a.log.Info("peer config generated",
+		"public_key", publicKey,
+		"client_ip", clientIP,
+	)
 
 	return &proto.GeneratePeerConfigResponse{
 		PrivateKey: privateKey,

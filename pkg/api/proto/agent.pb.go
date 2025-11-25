@@ -99,12 +99,12 @@ func (x *AddPeerRequest) GetPeerId() string {
 }
 
 type AddPeerResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ListenPort    int32                  `protobuf:"varint,1,opt,name=listen_port,json=listenPort,proto3" json:"listen_port,omitempty"`
-	Config        string                 `protobuf:"bytes,2,opt,name=config,proto3" json:"config,omitempty"`               // полная конфигурация клиента
-	QrCode        string                 `protobuf:"bytes,3,opt,name=qr_code,json=qrCode,proto3" json:"qr_code,omitempty"` // QR код в base64
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	ListenPort      int32                  `protobuf:"varint,1,opt,name=listen_port,json=listenPort,proto3" json:"listen_port,omitempty"`
+	ServerPublicKey string                 `protobuf:"bytes,2,opt,name=server_public_key,json=serverPublicKey,proto3" json:"server_public_key,omitempty"` // публичный ключ сервера
+	ServerEndpoint  string                 `protobuf:"bytes,3,opt,name=server_endpoint,json=serverEndpoint,proto3" json:"server_endpoint,omitempty"`      // endpoint сервера host:port
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *AddPeerResponse) Reset() {
@@ -144,16 +144,16 @@ func (x *AddPeerResponse) GetListenPort() int32 {
 	return 0
 }
 
-func (x *AddPeerResponse) GetConfig() string {
+func (x *AddPeerResponse) GetServerPublicKey() string {
 	if x != nil {
-		return x.Config
+		return x.ServerPublicKey
 	}
 	return ""
 }
 
-func (x *AddPeerResponse) GetQrCode() string {
+func (x *AddPeerResponse) GetServerEndpoint() string {
 	if x != nil {
-		return x.QrCode
+		return x.ServerEndpoint
 	}
 	return ""
 }
@@ -615,13 +615,12 @@ func (x *PeerInfo) GetPeerId() string {
 }
 
 type GeneratePeerConfigRequest struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	Interface      string                 `protobuf:"bytes,1,opt,name=interface,proto3" json:"interface,omitempty"`
-	ServerEndpoint string                 `protobuf:"bytes,2,opt,name=server_endpoint,json=serverEndpoint,proto3" json:"server_endpoint,omitempty"` // "vpn.example.com:51820"
-	DnsServers     string                 `protobuf:"bytes,3,opt,name=dns_servers,json=dnsServers,proto3" json:"dns_servers,omitempty"`             // "1.1.1.1, 1.0.0.1"
-	AllowedIps     string                 `protobuf:"bytes,4,opt,name=allowed_ips,json=allowedIps,proto3" json:"allowed_ips,omitempty"`             // "0.0.0.0/0" для полного туннеля
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Interface     string                 `protobuf:"bytes,1,opt,name=interface,proto3" json:"interface,omitempty"`
+	DnsServers    string                 `protobuf:"bytes,2,opt,name=dns_servers,json=dnsServers,proto3" json:"dns_servers,omitempty"`   // "1.1.1.1, 1.0.0.1"
+	AllowedIps    string                 `protobuf:"bytes,3,opt,name=allowed_ips,json=allowedIps,proto3" json:"allowed_ips,omitempty"`   // "0.0.0.0/0" для полного туннеля
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GeneratePeerConfigRequest) Reset() {
@@ -657,13 +656,6 @@ func (*GeneratePeerConfigRequest) Descriptor() ([]byte, []int) {
 func (x *GeneratePeerConfigRequest) GetInterface() string {
 	if x != nil {
 		return x.Interface
-	}
-	return ""
-}
-
-func (x *GeneratePeerConfigRequest) GetServerEndpoint() string {
-	if x != nil {
-		return x.ServerEndpoint
 	}
 	return ""
 }

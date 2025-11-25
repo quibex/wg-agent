@@ -27,7 +27,7 @@ func (errClient) Close() error { return nil }
 
 func TestAddPeer_DeviceError(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
-	svc := newAgentService(logger, errClient{}, "wg0", "10.8.0.0/24")
+	svc := newAgentService(logger, errClient{}, "wg0", "10.8.0.0/24", "vpn.example.com:51820")
 
 	_, err := svc.AddPeer(context.Background(), &proto.AddPeerRequest{
 		PublicKey:  "jNQKmw+IF/llmxOlGwrMxaHiPiG5xQyBq3/OmfEpuQM=",
