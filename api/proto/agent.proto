@@ -5,220 +5,131 @@ import "google/protobuf/empty.proto";
 
 option go_package = "github.com/quibex/wg-agent/api/proto";
 
-// WireGuardAgent - сервис для управления WireGuard пирами.
+// WireGuardAgent - простой API для управления VPN клиентами.
 //
-// Основные сценарии использования:
-//
-// 1. СОЗДАНИЕ НОВОГО КЛИЕНТА (рекомендуемый способ):
-//    - Вызвать GeneratePeerConfig() → получить ключи, конфиг, QR-код и выделенный IP
-//    - Вызвать AddPeer() с полученным public_key и allowed_ip → добавить пира в WireGuard
-//    - Отправить клиенту конфиг или QR-код для настройки
-//
-// 2. ДОБАВЛЕНИЕ СУЩЕСТВУЮЩЕГО КЛИЕНТА (если ключи уже есть):
-//    - Клиент генерирует ключи самостоятельно
-//    - Вызвать AddPeer() с публичным ключом клиента → добавить в WireGuard
-//    - Клиент настраивает WireGuard вручную с полученными параметрами
+// Основные методы:
+// - CreateClient: создать нового клиента → получить конфиг, QR, ссылку
+// - DisableClient: отключить клиента (подписка закончилась)
+// - EnableClient: включить обратно
+// - DeleteClient: удалить полностью
+// - GetClient: получить информацию о клиенте
 //
 service WireGuardAgent {
-  // ============================================================
-  // УПРАВЛЕНИЕ ПИРАМИ
-  // ============================================================
+  // CreateClient - создаёт нового VPN клиента.
+  // Генерирует ключи, выделяет IP, добавляет в WireGuard.
+  // Возвращает всё что нужно для подключения клиента.
+  rpc CreateClient(CreateClientRequest) returns (CreateClientResponse);
 
-  // AddPeer - добавляет пира в WireGuard интерфейс.
-  //
-  // Используйте когда:
-  // - У вас уже есть публичный ключ клиента (от GeneratePeerConfig или от клиента)
-  // - Нужно зарегистрировать пира на сервере WireGuard
-  //
-  // НЕ генерирует конфиг/QR - для этого используйте GeneratePeerConfig()
-  rpc AddPeer(AddPeerRequest) returns (AddPeerResponse);
+  // DisableClient - отключает клиента (подписка закончилась).
+  // Клиент остаётся в базе, но не может подключиться.
+  rpc DisableClient(DisableClientRequest) returns (DisableClientResponse);
 
-  // RemovePeer - полностью удаляет пира из WireGuard.
-  // После удаления клиент не сможет подключиться.
-  rpc RemovePeer(RemovePeerRequest) returns (google.protobuf.Empty);
+  // EnableClient - включает ранее отключенного клиента.
+  rpc EnableClient(EnableClientRequest) returns (EnableClientResponse);
 
-  // DisablePeer - временно отключает пира (без удаления).
-  // Пир остается в системе, но трафик блокируется.
-  // Используйте для временной блокировки клиента.
-  rpc DisablePeer(DisablePeerRequest) returns (google.protobuf.Empty);
+  // DeleteClient - полностью удаляет клиента.
+  rpc DeleteClient(DeleteClientRequest) returns (google.protobuf.Empty);
 
-  // EnablePeer - включает ранее отключенного пира.
-  // Восстанавливает возможность подключения.
-  rpc EnablePeer(EnablePeerRequest) returns (google.protobuf.Empty);
+  // GetClient - получить информацию о клиенте.
+  rpc GetClient(GetClientRequest) returns (GetClientResponse);
 
-  // ============================================================
-  // ИНФОРМАЦИЯ И МОНИТОРИНГ
-  // ============================================================
-
-  // GetPeerInfo - возвращает детальную информацию о конкретном пире.
-  // Включает статистику трафика и время последнего handshake.
-  rpc GetPeerInfo(GetPeerInfoRequest) returns (GetPeerInfoResponse);
-
-  // ListPeers - возвращает список всех пиров в системе.
-  // Используйте для отображения всех клиентов.
-  rpc ListPeers(ListPeersRequest) returns (ListPeersResponse);
-
-  // ============================================================
-  // ГЕНЕРАЦИЯ КОНФИГУРАЦИЙ
-  // ============================================================
-
-  // GeneratePeerConfig - генерирует полную конфигурацию для нового клиента.
-  //
-  // Что делает:
-  // 1. Генерирует пару ключей (приватный + публичный)
-  // 2. Выделяет свободный IP из подсети сервера
-  // 3. Создает готовый конфиг для клиента WireGuard
-  // 4. Генерирует QR-код для мобильных приложений
-  //
-  // ВАЖНО: После вызова нужно добавить пира через AddPeer()!
-  // Этот метод только генерирует конфиг, но НЕ добавляет пира в WireGuard.
-  rpc GeneratePeerConfig(GeneratePeerConfigRequest) returns (GeneratePeerConfigResponse);
+  // ListClients - список всех клиентов.
+  rpc ListClients(ListClientsRequest) returns (ListClientsResponse);
 }
 
 // ============================================================
-// ЗАПРОСЫ И ОТВЕТЫ
+// CreateClient - создание клиента
 // ============================================================
 
-// AddPeerRequest - запрос на добавление пира
-message AddPeerRequest {
-  // WireGuard интерфейс (опционально, по умолчанию "wg0")
-  string interface = 1;
-
-  // Публичный ключ клиента (обязательно)
-  // Формат: base64-encoded 32 байта
-  // Пример: "cFVLhJNfFbrLFhoNJz+0ljKU/wsQ+JGvYC3CDPB1RGg="
-  string public_key = 2;
-
-  // IP адрес клиента в CIDR формате (обязательно)
-  // Должен быть из подсети сервера с маской /32
-  // Пример: "10.8.0.10/32"
-  string allowed_ip = 3;
-
-  // Интервал keepalive в секундах (опционально, рекомендуется 25)
-  // 0 = отключен
-  int32 keepalive_s = 4;
-
-  // Уникальный идентификатор пира для внешней системы (опционально)
-  // Используется для связи с пользователем в боте
-  string peer_id = 5;
+message CreateClientRequest {
+  // Уникальный ID пользователя из твоей системы (telegram user_id, username, и т.д.)
+  string user_id = 1;
 }
 
-// AddPeerResponse - ответ после добавления пира
-message AddPeerResponse {
-  // Порт WireGuard сервера (для информации клиенту)
-  int32 listen_port = 1;
+message CreateClientResponse {
+  // Конфигурационный файл для клиента (.conf)
+  // Можно сохранить как файл и импортировать в WireGuard
+  string config_file = 1;
 
-  // Публичный ключ сервера (для настройки клиента вручную)
-  string server_public_key = 2;
+  // QR код в base64 (PNG изображение)
+  // Для сканирования мобильным приложением
+  string qr_code_base64 = 2;
 
-  // Endpoint сервера в формате "host:port"
-  string server_endpoint = 3;
-}
-
-// RemovePeerRequest - запрос на удаление пира
-message RemovePeerRequest {
-  string interface = 1;
-  // Публичный ключ удаляемого пира
-  string public_key = 2;
-}
-
-// DisablePeerRequest - запрос на отключение пира
-message DisablePeerRequest {
-  string interface = 1;
-  // Публичный ключ отключаемого пира
-  string public_key = 2;
-}
-
-// EnablePeerRequest - запрос на включение пира
-message EnablePeerRequest {
-  string interface = 1;
-  // Публичный ключ включаемого пира
-  string public_key = 2;
-}
-
-// GetPeerInfoRequest - запрос информации о пире
-message GetPeerInfoRequest {
-  string interface = 1;
-  // Публичный ключ пира
-  string public_key = 2;
-}
-
-// GetPeerInfoResponse - детальная информация о пире
-message GetPeerInfoResponse {
-  // Публичный ключ пира
-  string public_key = 1;
-
-  // Выделенный IP адрес пира
-  string allowed_ip = 2;
-
-  // Unix timestamp последнего успешного handshake
-  // 0 = никогда не подключался
-  int64 last_handshake_unix = 3;
-
-  // Принято байт от пира
-  int64 rx_bytes = 4;
-
-  // Отправлено байт пиру
-  int64 tx_bytes = 5;
-
-  // Статус: true = активен, false = отключен
-  bool enabled = 6;
-
-  // Внешний идентификатор пира
-  string peer_id = 7;
-}
-
-// ListPeersRequest - запрос списка пиров
-message ListPeersRequest {
-  string interface = 1;
-}
-
-// ListPeersResponse - список пиров
-message ListPeersResponse {
-  repeated PeerInfo peers = 1;
-}
-
-// PeerInfo - краткая информация о пире для списка
-message PeerInfo {
-  string public_key = 1;
-  string allowed_ip = 2;
-  bool enabled = 3;
-  string peer_id = 4;
-}
-
-// GeneratePeerConfigRequest - запрос на генерацию конфигурации
-message GeneratePeerConfigRequest {
-  // WireGuard интерфейс (опционально, по умолчанию "wg0")
-  string interface = 1;
-
-  // DNS серверы для клиента (опционально)
-  // По умолчанию: "1.1.1.1, 1.0.0.1" (Cloudflare)
-  // Пример: "8.8.8.8, 8.8.4.4" (Google)
-  string dns_servers = 2;
-
-  // AllowedIPs для клиента - какой трафик пойдет через VPN (опционально)
-  // По умолчанию: "0.0.0.0/0" (весь трафик через VPN)
-  // Пример: "10.8.0.0/24" (только трафик в подсеть VPN)
-  string allowed_ips = 3;
-}
-
-// GeneratePeerConfigResponse - сгенерированная конфигурация
-message GeneratePeerConfigResponse {
-  // Приватный ключ клиента (СЕКРЕТНЫЙ! Передать только клиенту)
-  string private_key = 1;
-
-  // Публичный ключ клиента (использовать в AddPeer)
-  string public_key = 2;
-
-  // Готовый конфиг для клиента WireGuard
-  // Можно сохранить как .conf файл
-  string config = 3;
-
-  // QR-код конфигурации в base64 (PNG)
-  // Для сканирования мобильным приложением WireGuard
-  string qr_code = 4;
+  // Deep link для автоимпорта в приложение WireGuard
+  // Формат: wireguard://import/<base64_config>
+  // На мобилке откроется приложение и предложит добавить туннель
+  string deep_link = 3;
 
   // Выделенный IP адрес клиента
-  // Использовать как allowed_ip в AddPeer()
-  string allowed_ip = 5;
+  string client_ip = 4;
+}
+
+// ============================================================
+// DisableClient - отключение клиента
+// ============================================================
+
+message DisableClientRequest {
+  string user_id = 1;
+}
+
+message DisableClientResponse {
+  bool success = 1;
+  string message = 2; // "disabled" или причина ошибки
+}
+
+// ============================================================
+// EnableClient - включение клиента
+// ============================================================
+
+message EnableClientRequest {
+  string user_id = 1;
+}
+
+message EnableClientResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// ============================================================
+// DeleteClient - удаление клиента
+// ============================================================
+
+message DeleteClientRequest {
+  string user_id = 1;
+}
+
+// ============================================================
+// GetClient - информация о клиенте
+// ============================================================
+
+message GetClientRequest {
+  string user_id = 1;
+}
+
+message GetClientResponse {
+  string user_id = 1;
+  string client_ip = 2;
+  bool enabled = 3;
+
+  // Статистика (если клиент подключен)
+  int64 rx_bytes = 4;        // скачано байт
+  int64 tx_bytes = 5;        // отправлено байт
+  int64 last_handshake = 6;  // unix timestamp последнего подключения (0 = никогда)
+}
+
+// ============================================================
+// ListClients - список клиентов
+// ============================================================
+
+message ListClientsRequest {}
+
+message ListClientsResponse {
+  repeated ClientInfo clients = 1;
+}
+
+message ClientInfo {
+  string user_id = 1;
+  string client_ip = 2;
+  bool enabled = 3;
+  int64 last_handshake = 4;
 }
