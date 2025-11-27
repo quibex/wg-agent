@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 	"net"
@@ -17,105 +16,137 @@ import (
 // agentService реализует WireGuardAgentServer
 type agentService struct {
 	proto.UnimplementedWireGuardAgentServer
-	log       *slog.Logger
-	wgClient  wireguard.Client
-	defIface  string
-	peerStore *wireguard.PeerStore
-	subnet    string // подсеть для выделения IP (например "10.8.0.0/24")
+	log            *slog.Logger
+	wgClient       wireguard.Client
+	iface          string // WireGuard интерфейс (wg0)
+	clients        *wireguard.ClientStore
+	subnet         string // подсеть для IP (10.8.0.0/24)
+	serverEndpoint string // endpoint для клиентов (vpn.example.com:51820)
 }
 
-func newAgentService(log *slog.Logger, wgClient wireguard.Client, defIface, subnet string) *agentService {
+func newAgentService(log *slog.Logger, wgClient wireguard.Client, iface, subnet, serverEndpoint string) *agentService {
 	return &agentService{
-		log:       log,
-		wgClient:  wgClient,
-		defIface:  defIface,
-		peerStore: wireguard.NewPeerStore(),
-		subnet:    subnet,
+		log:            log,
+		wgClient:       wgClient,
+		iface:          iface,
+		clients:        wireguard.NewClientStore(),
+		subnet:         subnet,
+		serverEndpoint: serverEndpoint,
 	}
 }
 
-// AddPeer добавляет пира без перезапуска интерфейса
-func (a *agentService) AddPeer(ctx context.Context, req *proto.AddPeerRequest) (*proto.AddPeerResponse, error) {
-	iface := req.Interface
-	if iface == "" {
-		iface = a.defIface
+// CreateClient создаёт нового VPN клиента.
+func (s *agentService) CreateClient(ctx context.Context, req *proto.CreateClientRequest) (*proto.CreateClientResponse, error) {
+	userID := req.UserId
+	if userID == "" {
+		return nil, fmt.Errorf("user_id is required")
 	}
 
-	// Валидация входных данных
-	if err := wireguard.ValidatePublicKey(req.PublicKey); err != nil {
-		return nil, errors.New("invalid public_key")
-	}
-	if err := wireguard.ValidateAllowedIP(req.AllowedIp); err != nil {
-		return nil, errors.New("invalid allowed_ip")
+	// Проверяем, что клиент ещё не существует
+	if s.clients.Exists(userID) {
+		return nil, fmt.Errorf("client %s already exists", userID)
 	}
 
-	key, _ := wgtypes.ParseKey(req.PublicKey)
-	_, ipNet, _ := net.ParseCIDR(req.AllowedIp)
+	// Проверяем, что сервер настроен
+	if s.serverEndpoint == "" {
+		return nil, fmt.Errorf("server not configured: SERVER_PUBLIC_IP is required")
+	}
+
+	// Генерируем ключи
+	privateKey, publicKey, err := wireguard.GenerateKeyPair()
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate keys: %w", err)
+	}
+
+	// Выделяем IP адрес
+	usedIPs := s.clients.GetUsedIPs()
+	clientIP, err := wireguard.AllocateIP(s.subnet, usedIPs)
+	if err != nil {
+		return nil, fmt.Errorf("failed to allocate IP: %w", err)
+	}
+
+	// Получаем публичный ключ сервера
+	device, err := s.wgClient.Device(s.iface)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get WireGuard device: %w", err)
+	}
+	serverPublicKey := device.PublicKey.String()
+
+	// Добавляем пира в WireGuard
+	key, _ := wgtypes.ParseKey(publicKey)
+	_, ipNet, _ := net.ParseCIDR(clientIP)
+	keepalive := 25 * time.Second
 
 	cfg := wgtypes.Config{
-		Peers: []wgtypes.PeerConfig{
-			{
-				PublicKey:                   key,
-				AllowedIPs:                  []net.IPNet{*ipNet},
-				UpdateOnly:                  false,
-				ReplaceAllowedIPs:           true,
-				PersistentKeepaliveInterval: func() *time.Duration { d := time.Duration(req.KeepaliveS) * time.Second; return &d }(),
-			},
-		},
+		Peers: []wgtypes.PeerConfig{{
+			PublicKey:                   key,
+			AllowedIPs:                  []net.IPNet{*ipNet},
+			ReplaceAllowedIPs:           true,
+			PersistentKeepaliveInterval: &keepalive,
+		}},
 	}
 
-	if err := a.wgClient.ConfigureDevice(iface, cfg); err != nil {
-		return nil, err
+	if err := s.wgClient.ConfigureDevice(s.iface, cfg); err != nil {
+		return nil, fmt.Errorf("failed to add peer to WireGuard: %w", err)
 	}
 
-	device, err := a.wgClient.Device(iface)
-	if err != nil {
-		a.log.Error("failed to get device after add", "error", err)
-		return nil, err
-	}
+	// Сохраняем клиента
+	s.clients.Add(&wireguard.ClientData{
+		UserID:     userID,
+		PublicKey:  publicKey,
+		PrivateKey: privateKey,
+		AllowedIP:  clientIP,
+		Enabled:    true,
+	})
 
-	// Добавляем в store
-	a.peerStore.AddPeer(req.PublicKey, req.PeerId, req.AllowedIp)
-
-	// Генерируем конфигурацию и QR код для клиента
-	serverPublicKey := device.PublicKey.String()
-	serverEndpoint := fmt.Sprintf("YOUR_SERVER_IP:%d", device.ListenPort)
-
-	config := wireguard.GenerateClientConfig(
-		"CLIENT_PRIVATE_KEY", // будет заменено lime-bot на фактический ключ
+	// Генерируем конфиг
+	configFile := wireguard.GenerateClientConfig(
+		privateKey,
 		serverPublicKey,
-		serverEndpoint,
-		"0.0.0.0/0",
-		"1.1.1.1, 1.0.0.1",
-		req.AllowedIp,
+		s.serverEndpoint,
+		"0.0.0.0/0",       // весь трафик через VPN
+		"1.1.1.1, 1.0.0.1", // Cloudflare DNS
+		clientIP,
 	)
 
 	// Генерируем QR код
-	qrCode, err := wireguard.GenerateQRCode(config)
+	qrCode, err := wireguard.GenerateQRCode(configFile)
 	if err != nil {
-		a.log.Warn("failed to generate QR code", "error", err)
-		qrCode = "" // не критичная ошибка
+		s.log.Warn("failed to generate QR code", "error", err)
+		qrCode = ""
 	}
 
-	a.log.Info("peer added", "public_key", req.PublicKey, "peer_id", req.PeerId)
+	// Генерируем deep link для автоимпорта
+	deepLink := wireguard.GenerateWireGuardLink(configFile)
 
-	return &proto.AddPeerResponse{
-		ListenPort: int32(device.ListenPort),
-		Config:     config,
-		QrCode:     qrCode,
+	s.log.Info("client created", "user_id", userID, "client_ip", clientIP)
+
+	return &proto.CreateClientResponse{
+		ConfigFile:   configFile,
+		QrCodeBase64: qrCode,
+		DeepLink:     deepLink,
+		ClientIp:     clientIP,
 	}, nil
 }
 
-func (a *agentService) RemovePeer(ctx context.Context, req *proto.RemovePeerRequest) (*emptypb.Empty, error) {
-	iface := req.Interface
-	if iface == "" {
-		iface = a.defIface
-	}
-	if err := wireguard.ValidatePublicKey(req.PublicKey); err != nil {
-		return nil, errors.New("invalid public_key")
+// DisableClient отключает клиента.
+func (s *agentService) DisableClient(ctx context.Context, req *proto.DisableClientRequest) (*proto.DisableClientResponse, error) {
+	userID := req.UserId
+	if userID == "" {
+		return &proto.DisableClientResponse{Success: false, Message: "user_id is required"}, nil
 	}
 
-	key, _ := wgtypes.ParseKey(req.PublicKey)
+	client, exists := s.clients.Get(userID)
+	if !exists {
+		return &proto.DisableClientResponse{Success: false, Message: "client not found"}, nil
+	}
+
+	if !client.Enabled {
+		return &proto.DisableClientResponse{Success: true, Message: "already disabled"}, nil
+	}
+
+	// Удаляем из WireGuard
+	key, _ := wgtypes.ParseKey(client.PublicKey)
 	cfg := wgtypes.Config{
 		Peers: []wgtypes.PeerConfig{{
 			PublicKey: key,
@@ -123,225 +154,153 @@ func (a *agentService) RemovePeer(ctx context.Context, req *proto.RemovePeerRequ
 		}},
 	}
 
-	if err := a.wgClient.ConfigureDevice(iface, cfg); err != nil {
-		return nil, err
+	if err := s.wgClient.ConfigureDevice(s.iface, cfg); err != nil {
+		return &proto.DisableClientResponse{Success: false, Message: err.Error()}, nil
 	}
 
-	// Удаляем из store
-	a.peerStore.RemovePeer(req.PublicKey)
+	s.clients.SetEnabled(userID, false)
+	s.log.Info("client disabled", "user_id", userID)
 
-	a.log.Info("peer removed", "public_key", req.PublicKey)
-	return &emptypb.Empty{}, nil
+	return &proto.DisableClientResponse{Success: true, Message: "disabled"}, nil
 }
 
-func (a *agentService) ListPeers(ctx context.Context, req *proto.ListPeersRequest) (*proto.ListPeersResponse, error) {
-	iface := req.Interface
-	if iface == "" {
-		iface = a.defIface
+// EnableClient включает клиента.
+func (s *agentService) EnableClient(ctx context.Context, req *proto.EnableClientRequest) (*proto.EnableClientResponse, error) {
+	userID := req.UserId
+	if userID == "" {
+		return &proto.EnableClientResponse{Success: false, Message: "user_id is required"}, nil
 	}
 
-	// Получаем информацию из store
-	storePeers := a.peerStore.ListPeers()
-	peers := make([]*proto.PeerInfo, 0, len(storePeers))
-
-	for _, peer := range storePeers {
-		peers = append(peers, &proto.PeerInfo{
-			PublicKey: peer.PublicKey,
-			AllowedIp: peer.AllowedIP,
-			Enabled:   peer.Enabled,
-			PeerId:    peer.PeerID,
-		})
+	client, exists := s.clients.Get(userID)
+	if !exists {
+		return &proto.EnableClientResponse{Success: false, Message: "client not found"}, nil
 	}
 
-	return &proto.ListPeersResponse{Peers: peers}, nil
-}
-
-// DisablePeer временно отключает пира (блокирует трафик)
-func (a *agentService) DisablePeer(ctx context.Context, req *proto.DisablePeerRequest) (*emptypb.Empty, error) {
-	iface := req.Interface
-	if iface == "" {
-		iface = a.defIface
+	if client.Enabled {
+		return &proto.EnableClientResponse{Success: true, Message: "already enabled"}, nil
 	}
 
-	if err := wireguard.ValidatePublicKey(req.PublicKey); err != nil {
-		return nil, errors.New("invalid public_key")
-	}
+	// Добавляем обратно в WireGuard
+	key, _ := wgtypes.ParseKey(client.PublicKey)
+	_, ipNet, _ := net.ParseCIDR(client.AllowedIP)
+	keepalive := 25 * time.Second
 
-	// Обновляем состояние в store
-	if !a.peerStore.SetPeerEnabled(req.PublicKey, false) {
-		return nil, errors.New("peer not found")
-	}
-
-	// Удаляем пира из WireGuard (временно)
-	key, _ := wgtypes.ParseKey(req.PublicKey)
 	cfg := wgtypes.Config{
 		Peers: []wgtypes.PeerConfig{{
-			PublicKey: key,
-			Remove:    true,
+			PublicKey:                   key,
+			AllowedIPs:                  []net.IPNet{*ipNet},
+			ReplaceAllowedIPs:           true,
+			PersistentKeepaliveInterval: &keepalive,
 		}},
 	}
 
-	if err := a.wgClient.ConfigureDevice(iface, cfg); err != nil {
-		// Возвращаем состояние обратно при ошибке
-		a.peerStore.SetPeerEnabled(req.PublicKey, true)
-		return nil, err
+	if err := s.wgClient.ConfigureDevice(s.iface, cfg); err != nil {
+		return &proto.EnableClientResponse{Success: false, Message: err.Error()}, nil
 	}
 
-	a.log.Info("peer disabled", "public_key", req.PublicKey)
+	s.clients.SetEnabled(userID, true)
+	s.log.Info("client enabled", "user_id", userID)
+
+	return &proto.EnableClientResponse{Success: true, Message: "enabled"}, nil
+}
+
+// DeleteClient полностью удаляет клиента.
+func (s *agentService) DeleteClient(ctx context.Context, req *proto.DeleteClientRequest) (*emptypb.Empty, error) {
+	userID := req.UserId
+	if userID == "" {
+		return nil, fmt.Errorf("user_id is required")
+	}
+
+	client, exists := s.clients.Get(userID)
+	if !exists {
+		return nil, fmt.Errorf("client not found")
+	}
+
+	// Удаляем из WireGuard (если включен)
+	if client.Enabled {
+		key, _ := wgtypes.ParseKey(client.PublicKey)
+		cfg := wgtypes.Config{
+			Peers: []wgtypes.PeerConfig{{
+				PublicKey: key,
+				Remove:    true,
+			}},
+		}
+		if err := s.wgClient.ConfigureDevice(s.iface, cfg); err != nil {
+			s.log.Warn("failed to remove peer from WireGuard", "error", err)
+		}
+	}
+
+	s.clients.Delete(userID)
+	s.log.Info("client deleted", "user_id", userID)
+
 	return &emptypb.Empty{}, nil
 }
 
-// EnablePeer включает ранее отключенного пира
-func (a *agentService) EnablePeer(ctx context.Context, req *proto.EnablePeerRequest) (*emptypb.Empty, error) {
-	iface := req.Interface
-	if iface == "" {
-		iface = a.defIface
+// GetClient возвращает информацию о клиенте.
+func (s *agentService) GetClient(ctx context.Context, req *proto.GetClientRequest) (*proto.GetClientResponse, error) {
+	userID := req.UserId
+	if userID == "" {
+		return nil, fmt.Errorf("user_id is required")
 	}
 
-	if err := wireguard.ValidatePublicKey(req.PublicKey); err != nil {
-		return nil, errors.New("invalid public_key")
-	}
-
-	// Получаем информацию о пире из store
-	peerInfo, exists := a.peerStore.GetPeer(req.PublicKey)
+	client, exists := s.clients.Get(userID)
 	if !exists {
-		return nil, errors.New("peer not found")
+		return nil, fmt.Errorf("client not found")
 	}
 
-	if peerInfo.Enabled {
-		return &emptypb.Empty{}, nil // уже включен
+	resp := &proto.GetClientResponse{
+		UserId:   client.UserID,
+		ClientIp: client.AllowedIP,
+		Enabled:  client.Enabled,
 	}
 
-	// Восстанавливаем пира в WireGuard
-	key, _ := wgtypes.ParseKey(req.PublicKey)
-	_, ipNet, _ := net.ParseCIDR(peerInfo.AllowedIP)
-
-	cfg := wgtypes.Config{
-		Peers: []wgtypes.PeerConfig{
-			{
-				PublicKey:                   key,
-				AllowedIPs:                  []net.IPNet{*ipNet},
-				UpdateOnly:                  false,
-				ReplaceAllowedIPs:           true,
-				PersistentKeepaliveInterval: func() *time.Duration { d := 25 * time.Second; return &d }(),
-			},
-		},
-	}
-
-	if err := a.wgClient.ConfigureDevice(iface, cfg); err != nil {
-		return nil, err
-	}
-
-	// Обновляем состояние в store
-	a.peerStore.SetPeerEnabled(req.PublicKey, true)
-
-	a.log.Info("peer enabled", "public_key", req.PublicKey)
-	return &emptypb.Empty{}, nil
-}
-
-// GetPeerInfo возвращает детальную информацию о пире
-func (a *agentService) GetPeerInfo(ctx context.Context, req *proto.GetPeerInfoRequest) (*proto.GetPeerInfoResponse, error) {
-	iface := req.Interface
-	if iface == "" {
-		iface = a.defIface
-	}
-
-	if err := wireguard.ValidatePublicKey(req.PublicKey); err != nil {
-		return nil, errors.New("invalid public_key")
-	}
-
-	// Получаем информацию из store
-	peerInfo, exists := a.peerStore.GetPeer(req.PublicKey)
-	if !exists {
-		return nil, errors.New("peer not found")
-	}
-
-	response := &proto.GetPeerInfoResponse{
-		PublicKey: peerInfo.PublicKey,
-		AllowedIp: peerInfo.AllowedIP,
-		Enabled:   peerInfo.Enabled,
-		PeerId:    peerInfo.PeerID,
-	}
-
-	// Если пир включен, получаем статистику из WireGuard
-	if peerInfo.Enabled {
-		device, err := a.wgClient.Device(iface)
-		if err != nil {
-			a.log.Warn("failed to get device info", "error", err)
-		} else {
-			key, _ := wgtypes.ParseKey(req.PublicKey)
+	// Получаем статистику из WireGuard если клиент включен
+	if client.Enabled {
+		device, err := s.wgClient.Device(s.iface)
+		if err == nil {
 			for _, peer := range device.Peers {
-				if peer.PublicKey.String() == key.String() {
-					response.LastHandshakeUnix = peer.LastHandshakeTime.Unix()
-					response.RxBytes = peer.ReceiveBytes
-					response.TxBytes = peer.TransmitBytes
+				if peer.PublicKey.String() == client.PublicKey {
+					resp.RxBytes = peer.ReceiveBytes
+					resp.TxBytes = peer.TransmitBytes
+					resp.LastHandshake = peer.LastHandshakeTime.Unix()
 					break
 				}
 			}
 		}
 	}
 
-	return response, nil
+	return resp, nil
 }
 
-// GeneratePeerConfig генерирует новую пару ключей и конфигурацию
-func (a *agentService) GeneratePeerConfig(ctx context.Context, req *proto.GeneratePeerConfigRequest) (*proto.GeneratePeerConfigResponse, error) {
-	iface := req.Interface
-	if iface == "" {
-		iface = a.defIface
+// ListClients возвращает список всех клиентов.
+func (s *agentService) ListClients(ctx context.Context, req *proto.ListClientsRequest) (*proto.ListClientsResponse, error) {
+	clients := s.clients.List()
+
+	// Получаем статистику из WireGuard
+	var device *wgtypes.Device
+	device, _ = s.wgClient.Device(s.iface)
+
+	peerStats := make(map[string]wgtypes.Peer)
+	if device != nil {
+		for _, peer := range device.Peers {
+			peerStats[peer.PublicKey.String()] = peer
+		}
 	}
 
-	// Генерируем пару ключей
-	privateKey, publicKey, err := wireguard.GenerateKeyPair()
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate key pair: %w", err)
+	result := make([]*proto.ClientInfo, 0, len(clients))
+	for _, c := range clients {
+		info := &proto.ClientInfo{
+			UserId:   c.UserID,
+			ClientIp: c.AllowedIP,
+			Enabled:  c.Enabled,
+		}
+
+		if peer, ok := peerStats[c.PublicKey]; ok {
+			info.LastHandshake = peer.LastHandshakeTime.Unix()
+		}
+
+		result = append(result, info)
 	}
 
-	// Получаем информацию о сервере
-	device, err := a.wgClient.Device(iface)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get device info: %w", err)
-	}
-
-	// Выделяем IP адрес
-	usedIPs := wireguard.GetUsedIPs(device)
-	clientIP, err := wireguard.AllocateIP(a.subnet, usedIPs)
-	if err != nil {
-		return nil, fmt.Errorf("failed to allocate IP: %w", err)
-	}
-
-	// Создаем конфигурацию
-	serverPublicKey := device.PublicKey.String()
-	allowedIPs := req.AllowedIps
-	if allowedIPs == "" {
-		allowedIPs = "0.0.0.0/0"
-	}
-	dnsServers := req.DnsServers
-	if dnsServers == "" {
-		dnsServers = "1.1.1.1, 1.0.0.1"
-	}
-
-	config := wireguard.GenerateClientConfig(
-		privateKey,
-		serverPublicKey,
-		req.ServerEndpoint,
-		allowedIPs,
-		dnsServers,
-		clientIP,
-	)
-
-	// Генерируем QR код
-	qrCode, err := wireguard.GenerateQRCode(config)
-	if err != nil {
-		a.log.Warn("failed to generate QR code", "error", err)
-		qrCode = "" // не критичная ошибка
-	}
-
-	return &proto.GeneratePeerConfigResponse{
-		PrivateKey: privateKey,
-		PublicKey:  publicKey,
-		Config:     config,
-		QrCode:     qrCode,
-		AllowedIp:  clientIP,
-	}, nil
+	return &proto.ListClientsResponse{Clients: result}, nil
 }

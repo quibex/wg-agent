@@ -5,91 +5,131 @@ import "google/protobuf/empty.proto";
 
 option go_package = "github.com/quibex/wg-agent/api/proto";
 
+// WireGuardAgent - простой API для управления VPN клиентами.
+//
+// Основные методы:
+// - CreateClient: создать нового клиента → получить конфиг, QR, ссылку
+// - DisableClient: отключить клиента (подписка закончилась)
+// - EnableClient: включить обратно
+// - DeleteClient: удалить полностью
+// - GetClient: получить информацию о клиенте
+//
 service WireGuardAgent {
-  // Основные операции с пирами
-  rpc AddPeer(AddPeerRequest) returns (AddPeerResponse);
-  rpc RemovePeer(RemovePeerRequest) returns (google.protobuf.Empty);
-  rpc DisablePeer(DisablePeerRequest) returns (google.protobuf.Empty);
-  rpc EnablePeer(EnablePeerRequest) returns (google.protobuf.Empty);
-  
-  // Информация и статистика
-  rpc GetPeerInfo(GetPeerInfoRequest) returns (GetPeerInfoResponse);
-  rpc ListPeers(ListPeersRequest) returns (ListPeersResponse);
-  
-  // Генерация конфигураций
-  rpc GeneratePeerConfig(GeneratePeerConfigRequest) returns (GeneratePeerConfigResponse);
+  // CreateClient - создаёт нового VPN клиента.
+  // Генерирует ключи, выделяет IP, добавляет в WireGuard.
+  // Возвращает всё что нужно для подключения клиента.
+  rpc CreateClient(CreateClientRequest) returns (CreateClientResponse);
+
+  // DisableClient - отключает клиента (подписка закончилась).
+  // Клиент остаётся в базе, но не может подключиться.
+  rpc DisableClient(DisableClientRequest) returns (DisableClientResponse);
+
+  // EnableClient - включает ранее отключенного клиента.
+  rpc EnableClient(EnableClientRequest) returns (EnableClientResponse);
+
+  // DeleteClient - полностью удаляет клиента.
+  rpc DeleteClient(DeleteClientRequest) returns (google.protobuf.Empty);
+
+  // GetClient - получить информацию о клиенте.
+  rpc GetClient(GetClientRequest) returns (GetClientResponse);
+
+  // ListClients - список всех клиентов.
+  rpc ListClients(ListClientsRequest) returns (ListClientsResponse);
 }
 
-message AddPeerRequest {
-  string interface   = 1;  // "wg0"
-  string public_key  = 2;
-  string allowed_ip  = 3;  // "10.8.0.10/32"
-  int32  keepalive_s = 4;  // 25
-  string peer_id     = 5;  // уникальный идентификатор пира для lime-bot
+// ============================================================
+// CreateClient - создание клиента
+// ============================================================
+
+message CreateClientRequest {
+  // Уникальный ID пользователя из твоей системы (telegram user_id, username, и т.д.)
+  string user_id = 1;
 }
 
-message AddPeerResponse { 
-  int32 listen_port = 1;
-  string config     = 2;  // полная конфигурация клиента
-  string qr_code    = 3;  // QR код в base64
+message CreateClientResponse {
+  // Конфигурационный файл для клиента (.conf)
+  // Можно сохранить как файл и импортировать в WireGuard
+  string config_file = 1;
+
+  // QR код в base64 (PNG изображение)
+  // Для сканирования мобильным приложением
+  string qr_code_base64 = 2;
+
+  // Deep link для автоимпорта в приложение WireGuard
+  // Формат: wireguard://import/<base64_config>
+  // На мобилке откроется приложение и предложит добавить туннель
+  string deep_link = 3;
+
+  // Выделенный IP адрес клиента
+  string client_ip = 4;
 }
 
-message RemovePeerRequest { 
-  string interface = 1; 
-  string public_key = 2; 
+// ============================================================
+// DisableClient - отключение клиента
+// ============================================================
+
+message DisableClientRequest {
+  string user_id = 1;
 }
 
-message DisablePeerRequest {
-  string interface = 1;
-  string public_key = 2;
+message DisableClientResponse {
+  bool success = 1;
+  string message = 2; // "disabled" или причина ошибки
 }
 
-message EnablePeerRequest {
-  string interface = 1;
-  string public_key = 2;
+// ============================================================
+// EnableClient - включение клиента
+// ============================================================
+
+message EnableClientRequest {
+  string user_id = 1;
 }
 
-message GetPeerInfoRequest {
-  string interface = 1;
-  string public_key = 2;
+message EnableClientResponse {
+  bool success = 1;
+  string message = 2;
 }
 
-message GetPeerInfoResponse {
-  string public_key = 1;
-  string allowed_ip = 2;
-  int64 last_handshake_unix = 3;
-  int64 rx_bytes = 4;
-  int64 tx_bytes = 5;
-  bool enabled = 6;
-  string peer_id = 7;
+// ============================================================
+// DeleteClient - удаление клиента
+// ============================================================
+
+message DeleteClientRequest {
+  string user_id = 1;
 }
 
-message ListPeersRequest { 
-  string interface = 1; 
+// ============================================================
+// GetClient - информация о клиенте
+// ============================================================
+
+message GetClientRequest {
+  string user_id = 1;
 }
 
-message ListPeersResponse { 
-  repeated PeerInfo peers = 1; 
-}
-
-message PeerInfo {
-  string public_key = 1;
-  string allowed_ip = 2;
+message GetClientResponse {
+  string user_id = 1;
+  string client_ip = 2;
   bool enabled = 3;
-  string peer_id = 4;
+
+  // Статистика (если клиент подключен)
+  int64 rx_bytes = 4;        // скачано байт
+  int64 tx_bytes = 5;        // отправлено байт
+  int64 last_handshake = 6;  // unix timestamp последнего подключения (0 = никогда)
 }
 
-message GeneratePeerConfigRequest {
-  string interface = 1;
-  string server_endpoint = 2;  // "vpn.example.com:51820"
-  string dns_servers = 3;      // "1.1.1.1, 1.0.0.1"
-  string allowed_ips = 4;      // "0.0.0.0/0" для полного туннеля
+// ============================================================
+// ListClients - список клиентов
+// ============================================================
+
+message ListClientsRequest {}
+
+message ListClientsResponse {
+  repeated ClientInfo clients = 1;
 }
 
-message GeneratePeerConfigResponse {
-  string private_key = 1;
-  string public_key = 2;
-  string config = 3;      // конфигурация для клиента
-  string qr_code = 4;     // QR код в base64
-  string allowed_ip = 5;  // выделенный IP адрес
-} 
+message ClientInfo {
+  string user_id = 1;
+  string client_ip = 2;
+  bool enabled = 3;
+  int64 last_handshake = 4;
+}
