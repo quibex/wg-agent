@@ -52,17 +52,27 @@ echo "📁 Files created:"
 echo "   - $CA_CERT (public certificate)"
 echo "   - $CA_KEY (private key - KEEP SECURE!)"
 echo ""
-echo "📋 Next steps:"
+echo "================================================"
+echo "📋 Copy this to .env file on each server:"
+echo "================================================"
 echo ""
-echo "1. Encode certificates for .env file:"
-echo "   CA_CERT_PEM=\$(cat $CA_CERT | base64 | tr -d '\n')"
-echo "   CA_KEY_PEM=\$(cat $CA_KEY | base64 | tr -d '\n')"
+
+CA_CERT_B64=$(cat "$CA_CERT" | base64 | tr -d '\n')
+CA_KEY_B64=$(cat "$CA_KEY" | base64 | tr -d '\n')
+
+cat << ENVEOF
+CA_CERT_PEM=$CA_CERT_B64
+CA_KEY_PEM=$CA_KEY_B64
+SERVER_PUBLIC_IP=your.server.ip.address
+ENVEOF
+
 echo ""
-echo "2. Add these to your .env file on each server"
+echo "================================================"
 echo ""
-echo "3. Generate client certificate for bot:"
-echo "   ./scripts/make-client-cert.sh"
+echo "📝 Next steps:"
+echo "1. Copy the 3 lines above to .env on each new server"
+echo "2. Replace 'your.server.ip.address' with actual IP"
+echo "3. Generate client certificate for bot: ./scripts/make-client-cert.sh"
 echo ""
-echo "⚠️  IMPORTANT: Keep the CA private key ($CA_KEY) secure!"
-echo "   This key will be used to generate all server certificates."
+echo "⚠️  IMPORTANT: Keep $CA_KEY secure!"
 echo ""

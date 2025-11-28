@@ -158,10 +158,33 @@ generate_tls_certificates() {
     local SERVER_CERT="$CERTS_DIR/server.pem"
     
     echo "   Loading CA from environment..."
-    echo "$CA_CERT_PEM" | base64 -d > "$CA_CERT"
-    echo "$CA_KEY_PEM" | base64 -d > "$CA_KEY"
+    
+    if ! echo "$CA_CERT_PEM" | base64 -d > "$CA_CERT" 2>/dev/null; then
+        echo "❌ Failed to decode CA_CERT_PEM. Make sure it's valid base64."
+        exit 1
+    fi
+    
+    if ! echo "$CA_KEY_PEM" | base64 -d > "$CA_KEY" 2>/dev/null; then
+        echo "❌ Failed to decode CA_KEY_PEM. Make sure it's valid base64."
+        exit 1
+    fi
+    
+    # Verify CA certificate is valid
+    if ! openssl x509 -in "$CA_CERT" -noout 2>/dev/null; then
+        echo "❌ CA certificate is invalid. Run scripts/make-ca-only.sh to regenerate."
+        exit 1
+    fi
+    
+    # Verify CA key is valid
+    if ! openssl rsa -in "$CA_KEY" -check -noout 2>/dev/null; then
+        echo "❌ CA private key is invalid. Run scripts/make-ca-only.sh to regenerate."
+        exit 1
+    fi
+    
     chmod 600 "$CA_KEY"
     chmod 644 "$CA_CERT"
+    
+    echo "   ✅ CA certificates validated"
     
     echo "   Generating server certificate..."
     openssl genrsa -out "$SERVER_KEY" 4096 2>/dev/null
@@ -282,10 +305,12 @@ output_connection_info() {
     echo "WireGuard Port:     ${WG_SERVER_PORT}"
     echo "WireGuard Public:   $(cat /etc/wireguard/${WG_AGENT_INTERFACE}_public.key)"
     echo ""
-    echo "📡 Connection Parameters for Bot:"
+    echo "📡 Connection Parameters for Bot (copy these):"
     echo "───────────────────────────────────────────────"
-    echo "HTTP Endpoint:      http://${SERVER_PUBLIC_IP}:${WG_AGENT_HTTP_ADDR#*:}/health"
-    echo "gRPC Endpoint:      ${SERVER_PUBLIC_IP}:${WG_AGENT_ADDR#*:}"
+    echo "Endpoint:           ${SERVER_PUBLIC_IP}:${WG_SERVER_PORT}"
+    echo "GRPCAddress:        ${SERVER_PUBLIC_IP}:${WG_AGENT_ADDR#*:}"
+    echo ""
+    echo "Health Check:       http://${SERVER_PUBLIC_IP}:${WG_AGENT_HTTP_ADDR#*:}/health"
     echo ""
     echo "🔐 TLS Certificates (for bot):"
     echo "───────────────────────────────────────────────"

@@ -1,177 +1,191 @@
 # WireGuard Agent
 
-🚀 **gRPC service for remote WireGuard management**
+gRPC сервис для удалённого управления WireGuard через бота.
 
-A secure, high-performance agent that provides remote WireGuard peer management via gRPC with mTLS authentication.
+---
 
-## Features
+## Быстрый старт
 
-- 🔐 **mTLS Authentication** - Mutual TLS with client certificate validation
-- ⚡ **Rate Limiting** - Configurable request limiting to protect server resources  
-- 🏥 **Health Checks** - HTTP health endpoint for monitoring
-- 📊 **Structured Logging** - Built-in structured logging with slog
-- 🚀 **Automated Setup** - One-script deployment on new servers
+### Схема работы
 
-## Quick Start - Production Deployment
+```
+[Твой комп] -- генерируешь CA и клиентский сертификат (1 раз)
+     │
+     ├── CA сертификат ──────────► [VPS сервер 1] -- setup-server.sh
+     ├── CA сертификат ──────────► [VPS сервер 2] -- setup-server.sh
+     ├── CA сертификат ──────────► [VPS сервер N] -- setup-server.sh
+     │
+     └── Клиентский сертификат ──► [kurut-bot] -- подключается ко всем серверам
+```
 
-### 1. Generate CA Certificate (One Time Only)
+**Один CA = один клиентский сертификат = все сервера.**
 
-On your local machine, generate the Certificate Authority that will sign all server certificates:
+---
+
+## Шаг 1. Генерация CA (делается ОДИН раз на твоём компе)
 
 ```bash
 cd wg-agent
-chmod +x scripts/make-ca-only.sh
 ./scripts/make-ca-only.sh
 ```
 
-This creates `certs/ca.pem` and `certs/ca-key.pem`. Keep these secure!
+Скрипт создаст:
+- `certs/ca.pem` — публичный сертификат CA
+- `certs/ca-key.pem` — приватный ключ CA (храни в безопасности!)
 
-### 2. Generate Client Certificate for Bot (One Time Only)
+И выведет 3 строки для `.env`:
+```
+CA_CERT_PEM=LS0tLS1CRUdJTi...длинная_base64_строка...
+CA_KEY_PEM=LS0tLS1CRUdJTi...длинная_base64_строка...
+SERVER_PUBLIC_IP=your.server.ip.address
+```
+
+**Сохрани эти строки** — они нужны для каждого нового сервера.
+
+> Если потерял вывод, запусти `./scripts/get-env.sh` чтобы получить их снова.
+
+---
+
+## Шаг 2. Генерация клиентского сертификата для бота (делается ОДИН раз)
 
 ```bash
-chmod +x scripts/make-client-cert.sh
 ./scripts/make-client-cert.sh
 ```
 
-This creates client certificates in `certs/` that your bot will use to connect to all wg-agent servers.
+Скрипт создаст:
+- `certs/client.pem` — клиентский сертификат
+- `certs/client-key.pem` — приватный ключ клиента
 
-### 3. Deploy to New Server
+И выведет переменные для бота:
+```
+WIREGUARD_TLS_CA_CERT=...base64...
+WIREGUARD_TLS_CLIENT_CERT=...base64...
+WIREGUARD_TLS_CLIENT_KEY=...base64...
+WIREGUARD_TLS_SERVER_NAME=wg-agent
+```
 
-On your new VPS server:
+**Добавь эти переменные в `.env` файл kurut-bot.**
+
+---
+
+## Шаг 3. Установка wg-agent на новый VPS
+
+### На сервере:
 
 ```bash
-# 1. Download the setup script
-wget https://raw.githubusercontent.com/YOUR_USERNAME/wg-agent/main/scripts/setup-server.sh
+# 1. Скачай скрипт установки
+wget https://raw.githubusercontent.com/quibex/wg-agent/main/scripts/setup-server.sh
 chmod +x setup-server.sh
 
-# 2. Create .env file with your configuration
+# 2. Создай .env файл (вставь свои значения из Шага 1)
 cat > .env << 'EOF'
-CA_CERT_PEM=$(cat certs/ca.pem | base64 | tr -d '\n')
-CA_KEY_PEM=$(cat certs/ca-key.pem | base64 | tr -d '\n')
-WG_AGENT_INTERFACE=wg0
-WG_AGENT_ADDR=0.0.0.0:7443
-WG_AGENT_HTTP_ADDR=0.0.0.0:8080
-WG_AGENT_RATE_LIMIT=10
-SERVER_PUBLIC_IP=YOUR_SERVER_IP
-WG_SERVER_PORT=51820
-WG_SERVER_IP=10.8.0.1/24
+CA_CERT_PEM=твоя_base64_строка_из_шага_1
+CA_KEY_PEM=твоя_base64_строка_из_шага_1
+SERVER_PUBLIC_IP=123.45.67.89
 EOF
 
-# 3. Run the setup script
+# 3. Запусти установку
 sudo ./setup-server.sh
 ```
 
-The script will:
-- Install dependencies (Go, WireGuard, OpenSSL)
-- Configure WireGuard interface
-- Generate unique TLS certificates for this server
-- Build and install wg-agent as a systemd service
-- Display connection parameters for your bot
+Скрипт автоматически:
+- Установит Go, WireGuard, OpenSSL
+- Настроит WireGuard интерфейс (wg0)
+- Сгенерирует серверный TLS сертификат
+- Соберёт и запустит wg-agent как systemd сервис
 
-### 4. Add Server to Bot
+### После установки скрипт выведет:
 
-After setup completes, copy the displayed connection parameters and add the server to your bot using the admin interface.
-
-## Configuration
-
-### Environment Variables
-
-See `.env.example` for all available options. Key variables:
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `WG_AGENT_INTERFACE` | `wg0` | WireGuard interface name |
-| `WG_AGENT_ADDR` | `0.0.0.0:7443` | gRPC server address |
-| `WG_AGENT_HTTP_ADDR` | `0.0.0.0:8080` | HTTP health server address |
-| `WG_AGENT_RATE_LIMIT` | `10` | Requests per second limit |
-| `SERVER_PUBLIC_IP` | - | Public IP of the server (required) |
-| `WG_SERVER_PORT` | `51820` | WireGuard listen port |
-| `WG_SERVER_IP` | - | VPN IP range in CIDR notation (required) |
-
-### Rate Limiting
-
-Recommended limits based on server capacity:
-
-- **1-2 cores**: 3 RPS
-- **2-4 cores**: 8 RPS  
-- **4+ cores**: 15 RPS
-
-## Development
-
-### Local Setup
-
-```bash
-# Generate certificates for development
-make certs
-
-# Build
-make build
-
-# Run tests
-make test
-
-# Run locally
-make run-agent
+```
+📡 Connection Parameters for Bot (copy these):
+───────────────────────────────────────────────
+Endpoint:           123.45.67.89:51820
+GRPCAddress:        123.45.67.89:7443
 ```
 
-## API
+**Эти два параметра нужны для добавления сервера в бота.**
 
-### gRPC Methods
+---
 
-#### Peer Management
+## Шаг 4. Добавление сервера в бота
 
-- `AddPeer(interface, publicKey, allowedIP, keepalive, peerID)` - Add WireGuard peer and get configuration
-  - Returns: server port, client configuration, QR code
-- `RemovePeer(interface, publicKey)` - Remove WireGuard peer completely
-- `DisablePeer(interface, publicKey)` - Temporarily disable peer (block traffic)
-- `EnablePeer(interface, publicKey)` - Enable previously disabled peer
+В Telegram боте:
+1. Напиши `/add_wg_server`
+2. Введи название сервера (любое, например "Germany-1")
+3. Введи **Endpoint**: `123.45.67.89:51820`
+4. Введи **GRPCAddress**: `123.45.67.89:7443`
 
-#### Monitoring & Information
+Готово! Сервер добавлен.
 
-- `GetPeerInfo(interface, publicKey)` - Get detailed peer information
-  - Returns: public key, IP, last handshake, RX/TX traffic, status, peer ID
-- `ListPeers(interface)` - List all peers with basic information
+---
 
-#### Configuration Generation
+## Добавление второго/третьего/N сервера
 
-- `GeneratePeerConfig(interface, serverEndpoint, dnsServers, allowedIPs)` - Generate new key pair and configuration
-  - Returns: private/public keys, configuration, QR code, allocated IP
+Повтори только **Шаг 3** и **Шаг 4**.
 
-### Health Check
+CA и клиентский сертификат уже есть — используй те же `CA_CERT_PEM` и `CA_KEY_PEM`.
 
-- `GET /health` → `200 OK` (HTTP endpoint on port 8080)
+---
 
-## Rate Limiting
-
-Recommended limits based on server capacity:
-
-- **1-2 cores**: 3 RPS
-- **2-4 cores**: 8 RPS  
-- **4+ cores**: 15 RPS
-
-## Security
-
-- **mTLS** with client certificate validation
-- **TLS 1.3** minimum version
-- **Isolated containers** with minimal privileges
-- **Non-root execution** in Docker
-
-## Development
+## Полезные команды на сервере
 
 ```bash
-# Build
-make build
+# Статус сервиса
+systemctl status wg-agent
 
-# Run tests
-make test
+# Логи
+journalctl -u wg-agent -f
 
-# Generate certificates for local development  
-make certs
+# Перезапуск
+systemctl restart wg-agent
 
-# Run locally
-./wg-agent
+# Проверка WireGuard
+wg show wg0
+
+# Health check
+curl http://localhost:8080/health
 ```
 
-## License
+---
 
-MIT License
+## Опциональные переменные .env (на сервере)
+
+| Переменная | По умолчанию | Описание |
+|------------|--------------|----------|
+| `WG_AGENT_INTERFACE` | `wg0` | Имя WireGuard интерфейса |
+| `WG_AGENT_ADDR` | `0.0.0.0:7443` | Адрес gRPC сервера |
+| `WG_AGENT_HTTP_ADDR` | `0.0.0.0:8080` | Адрес HTTP (health check) |
+| `WG_AGENT_RATE_LIMIT` | `10` | Лимит запросов в секунду |
+| `WG_SERVER_PORT` | `51820` | Порт WireGuard |
+| `WG_SERVER_IP` | `10.8.0.1/24` | IP диапазон VPN |
+
+---
+
+## Troubleshooting
+
+### Сервис не запускается
+```bash
+journalctl -u wg-agent -n 50
+```
+
+### WireGuard не работает
+```bash
+wg show wg0
+systemctl status wg-quick@wg0
+```
+
+### Бот не подключается к серверу
+1. Проверь что порт 7443 открыт в firewall
+2. Проверь что TLS сертификаты в боте правильные
+3. Проверь health: `curl http://SERVER_IP:8080/health`
+
+---
+
+## Резюме: что где хранится
+
+| Что | Где | Для чего |
+|-----|-----|----------|
+| `certs/ca.pem`, `certs/ca-key.pem` | Твой комп | Генерация серверных сертификатов |
+| `certs/client.pem`, `certs/client-key.pem` | Твой комп → бот | Авторизация бота на серверах |
+| `CA_CERT_PEM`, `CA_KEY_PEM` | .env на каждом VPS | Генерация серверного сертификата |
+| `WIREGUARD_TLS_*` | .env бота | Подключение к wg-agent серверам |
