@@ -21,7 +21,10 @@ usage() {
 }
 
 check_root() {
-    [[ $EUID -ne 0 ]] && { log_error "Нужен root"; exit 1; }
+    if [[ $EUID -ne 0 ]]; then
+        log_error "Нужен root"
+        exit 1
+    fi
 }
 
 build_and_restart() {
@@ -64,7 +67,10 @@ do_update() {
 
 do_switch() {
     local tag="$1"
-    [[ -z "$tag" ]] && { log_error "Укажи тег: $0 switch v0.0.3"; exit 1; }
+    if [[ -z "$tag" ]]; then
+        log_error "Укажи тег: $0 switch v0.0.3"
+        exit 1
+    fi
 
     check_root
     cd "$INSTALL_DIR"
