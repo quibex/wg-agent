@@ -8,6 +8,9 @@ NC='\033[0m'
 INSTALL_DIR="/opt/wg-agent"
 SERVICE_NAME="wg-agent"
 
+# Go path
+export PATH=$PATH:/usr/local/go/bin:/root/go/bin
+
 log_info() { echo -e "${GREEN}[INFO]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
